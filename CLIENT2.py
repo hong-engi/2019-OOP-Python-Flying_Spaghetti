@@ -22,10 +22,19 @@ def receive():
         except OSError:
             print("서버와의 접속을 끊었습니다.")
             break
+
         if not data:  # 넘어온 데이터가 없다면.. 로그아웃!
             print("서버로부터 정상적으로 로그아웃했습니다.")
             break
-        print(data.decode('UTF-8'),end='')  # 서버로 부터 받은 값을 출력
+        data=data.decode('UTF-8')
+        if data == '2H3DTESTAB!%FTTHFASDF':  # 연결 확인
+            pass
+
+        if data == 'fEEBgFFDASDL%%@FM' or data == '@)!(확인':  # timer
+            mysock.send(bytes('test_message'+data, 'UTF-8'))
+            continue
+
+        print(data, end='')  # 서버로 부터 받은 값을 출력
 
     print('소켓의 읽기 버퍼를 닫습니다.')
     try:
@@ -47,10 +56,6 @@ def main_thread():
             data = input()
         except KeyboardInterrupt:
             continue
-
-        if data == '2H3DTESTAB!%FTTHFASDF': #연결 확인
-            pass
-
         if data == '!quit':
             print("서버와의 접속을 끊는 중입니다.")
             break

@@ -74,6 +74,7 @@ def main_thread():
 thread_main = threading.Thread(target=main_thread, args=())
 thread_main.start()
 
+
 # 메시지를 받고, 보내는 스레드가 종료되길 기다림
 thread_main.join()
 

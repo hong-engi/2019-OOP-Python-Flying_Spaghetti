@@ -5,12 +5,13 @@ server_ip = '127.0.0.1'
 server_port = 50000
 address = (server_ip, server_port)
 
-# 소켓을 이용해서 서버에 접속
+# 소켓을 이용해서 서버에 접속기
 mysock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 mysock.connect(address)
 
 
 # 서버로부터 메시지를 받아, 출력하는 함수.
+
 def receive():
     global mysock
     while True:
@@ -26,8 +27,15 @@ def receive():
         if not data:  # 넘어온 데이터가 없다면.. 로그아웃!
             print("서버로부터 정상적으로 로그아웃했습니다.")
             break
+        data=data.decode('UTF-8')
+        if data == '2H3DTESTAB!%FTTHFASDF':  # 연결 확인
+            pass
 
-        print(data.decode('UTF-8'),end='')  # 서버로 부터 받은 값을 출력
+        if data == 'fEEBgFFDASDL%%@FM' or data == '@)!(확인':  # timer
+            mysock.send(bytes('test_message'+data, 'UTF-8'))
+            continue
+
+        print(data, end='')  # 서버로 부터 받은 값을 출력
 
     print('소켓의 읽기 버퍼를 닫습니다.')
     try:
@@ -49,10 +57,6 @@ def main_thread():
             data = input()
         except KeyboardInterrupt:
             continue
-
-        if data == '2H3DTESTAB!%FTTHFASDF': #연결 확인
-            pass
-
         if data == '!quit':
             print("서버와의 접속을 끊는 중입니다.")
             break
