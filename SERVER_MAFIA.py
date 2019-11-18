@@ -20,8 +20,8 @@ mafia_num = {1: 0, 2: 1, 3: 1, 4: 1, 5: 1, 6: 2, 7: 2, 8: 2, 9: 3, 10: 3, 11: 3,
 
 
 def isalpha(text):
-    for i in text:
-        if not 'a' <= i <= 'z' and not 'A' <= i <= 'Z':
+    for char in text:
+        if not 'a' <= char <= 'z' and not 'A' <= char <= 'Z':
             return False
     return True
 
@@ -791,13 +791,13 @@ class Room:  # room 바로가기
     def kill(self, player, killed):
         if killed == 'by terrorist':
             sendm(player, "테러리스트가 당신을 희생의 양으로 삼았습니다!", line_chr='!')
-            broadcast(self.p_list, "{}(이)가 테러리스트와 같이 먼지가 되었습니다!.".format(name_dic[name_dic[player]]), talker=[player])
+            broadcast(self.p_list, "{}(이)가 테러리스트와 같이 먼지가 되었습니다!.".format(name_dic[player]), talker=[player])
         if killed == 'by mafia':
             sendm(player, "마피아가 당신을 죽였습니다!", line_chr='!')
-            broadcast(self.p_list, "{}(이)가 마피아의 공격을 받고 사망했습니다!".format(name_dic[name_dic[player]]), talker=[player])
+            broadcast(self.p_list, "{}(이)가 마피아의 공격을 받고 사망했습니다!".format(name_dic[player]), talker=[player])
         if killed == 'by vote':
             sendm(player, "민주주의의 법칙으로 인해 당신은 죽었습니다.", line_chr='!')
-            broadcast(self.p_list, "{}(이)가 투표로 죽었습니다.".format(name_dic[name_dic[player]]), talker=[player])
+            broadcast(self.p_list, "{}(이)가 투표로 죽었습니다.".format(name_dic[player]), talker=[player])
         if self.job[player].name == '테러리스트':
             if self.job[player].sel is not None:
                 self.kill(self.job[player].sel[1], 'by terrorist')
@@ -812,10 +812,10 @@ class Room:  # room 바로가기
     @cerror_block
     def job_print(self):
         text = "-" * 30 + '\n' + "이름        직업" + '\n'
-        for i in self.p_list:
-            name = name_dic[i]
-            text += "{}{}    {} {}\n".format(name, ' ' * (10 - len(name)), self.job[i].name,
-                                             '[생존]' if self.job[i].alive else '[사망]')
+        for player in self.p_list:
+            name = name_dic[player]
+            text += "{}{}    {} {}\n".format(name, ' ' * (10 - len(name)), self.job[player].name,
+                                             '[생존]' if self.job[player].alive else '[사망]')
         broadcast(self.p_list, text, line=False)
 
     @cerror_block
@@ -882,20 +882,20 @@ class Room:  # room 바로가기
         broadcast(self.p_list, "시간 제한은 {}초입니다.".format(timer_time), line=False)
         for player in self.job:
             if self.job[player].alive:
-                x = threading.Thread(target=getattr(self.job[player], func_name), args=())
-                thread_list.append(x)
-                x.start()
-        for i in thread_list:
-            i.join()
+                thread = threading.Thread(target=getattr(self.job[player], func_name), args=())
+                thread_list.append(thread)
+                thread.start()
+        for thread in thread_list:
+            thread.join()
 
     @cerror_block
     def game_ended(self):
         mafia_n, citizen_n = 0, 0
-        for i in self.mafia_list:
-            if self.job[i].alive:
+        for mafia in self.mafia_list:
+            if self.job[mafia].alive:
                 mafia_n += 1
-        for i in self.citizen_list:
-            if self.job[i].alive:
+        for citizen in self.citizen_list:
+            if self.job[citizen].alive:
                 citizen_n += 1
         if mafia_n == 0:
             return 'C'
@@ -924,10 +924,10 @@ class Room:  # room 바로가기
             job_num_dic = {Mafia: mafia_num[self.player_num], Police: 1, Doctor: 1}
             cnt = job_num_dic[Mafia] + 2
             random.shuffle(job_name_list)
-            for i in job_name_list:
+            for job_class in job_name_list:
                 if cnt >= self.player_num:
                     break
-                job_num_dic[i] = 1
+                job_num_dic[job_class] = 1
                 cnt += 1
             random.shuffle(self.p_list)
             job_index = 0
