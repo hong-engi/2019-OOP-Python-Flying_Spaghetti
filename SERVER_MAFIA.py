@@ -41,10 +41,13 @@ def not_con(sock):
 
 
 def remove(sock):
-    global name_dic, client_list
-    del name_dic[sock]
-    client_list.remove(sock)
-    sock.close()
+    try:
+        global name_dic, client_list
+        del name_dic[sock]
+        client_list.remove(sock)
+        sock.close()
+    except:
+        return
 
 
 def cerror_block(inner_func):
@@ -53,7 +56,6 @@ def cerror_block(inner_func):
         try:
             return inner_func(*args, **kwargs)
         except CError:
-            print("연결에 실패했습니다.")
             return
 
     return dec_f
@@ -64,9 +66,9 @@ def error_block(inner_func):
         nonlocal inner_func
         try:
             return inner_func(client, *args, **kwargs)
-        except BaseException as e:
-            print(e)
-            print("{}의 연결에 실패했습니다.".format(name_dic[client]))
+        except:
+            if client in name_dic:
+                print("{}의 연결에 실패했습니다.".format(name_dic[client]))
             remove(client)
             raise CError
 
@@ -74,16 +76,22 @@ def error_block(inner_func):
 
 
 def sendm(client, msg, enter=True, line=True, line_chr='='):
-    if line:
-        msg = line_chr * 100 + '\n' + msg
-    if enter:
-        msg = msg + '\n'
-    error_block(socket.socket.send)(client, msg.encode('utf-8'))
+    try:
+        if line:
+            msg = line_chr * 100 + '\n' + msg
+        if enter:
+            msg = msg + '\n'
+        error_block(socket.socket.send)(client, msg.encode('utf-8'))
+    except CError:
+        return None
 
 
 def recvm(client):
-    x = error_block(socket.socket.recv)(client, 1024)
-    return x.decode('utf-8')
+    try:
+        x = error_block(socket.socket.recv)(client, 1024)
+        return x.decode('utf-8')
+    except CError:
+        return None
 
 
 class Job:
@@ -318,11 +326,11 @@ class Police(Job):
     @cerror_block
     def check_print(self):
         sendm(self.player, "-" * 100 + '\n' + "번호    이름")
-        for player_num in range(len(self.check_list)):
-            player = self.check_list[player_num]
+        for player_num in range(len(self.room.p_list)):
+            player = self.room.p_list[player_num]
             sendm(self.player, "<{}>  -  [{}]".format(player_num + 1, name_dic[player]), line=False,
                   )
-            if not self.room.job[self.check_list[player_num]].alive:
+            if not self.room.job[self.room.p_list[player_num]].alive:
                 sendm(self.player, " - [DEAD]", line=False, enter=False)
             sendm(self.player, " - [{}]".format('마피아' if self.room.job[player].name == '마피아' else '시민'),
                   line=False)
@@ -747,7 +755,7 @@ class Room:  # room 바로가기
                     self.kick(sock)
                     return
                 broadcast(self.p_list, name_dic[sock] + ' : ' + msg, talker=[sock], line=False)
-        except CError:
+        except [CError, KeyError]:
             self.kick(sock)
             return
 
@@ -857,13 +865,13 @@ class Room:  # room 바로가기
                                        "{}(이)가 {}래요!".format(name_dic[self.news], self.job[self.news].name),
                           line_chr='#')
                 self.news = None
-            self.happening('morning', 30)
-            self.happening('vote', 30)
+            self.happening('morning', 240)  #
+            self.happening('vote', 240)
             self.vote_result()
             voted_player = self.vote_select
             if voted_player is not None:
-                self.happening('final_words', 20)
-                self.happening('final_vote', 20)
+                self.happening('final_words', 240)
+                self.happening('final_vote', 240)
             if self.final_vote_result():
                 if self.job[voted_player] == '정치인':
                     sendm(voted_player, "당신은 정치인이므로 죽지 않습니다.")
@@ -896,12 +904,10 @@ class Room:  # room 바로가기
                 mafia_n += 1
         for citizen in self.citizen_list:
             if self.job[citizen].alive:
-                if self.job[citizen].name == '정치인':
-                    citizen_n += 1
                 citizen_n += 1
         if mafia_n == 0:
             return 'C'
-        if mafia_n >= citizen_n:
+        if mafia_n > citizen_n:
             return 'M'
         return False
 
@@ -932,6 +938,7 @@ class Room:  # room 바로가기
                 job_num_dic[job_class] = 1
                 cnt += 1
             random.shuffle(self.p_list)
+            job_index = 0
             for player in self.p_list:
                 x = random.choice(list(job_num_dic.keys()))
                 while job_num_dic[x] == 0:
@@ -944,6 +951,7 @@ class Room:  # room 바로가기
                 if self.job[player].name == '영매':
                     self.shaman = player
                 job_num_dic[x] -= 1
+                job_index += 1
             for player in self.job:
                 print('{}:{}'.format(name_dic[player], self.job[player].name))
             return True
@@ -962,6 +970,7 @@ def wait(sock, name_f=None):
     while True:
         sendm(sock, "방을 만드시려면 'new room'을, 지금 있는 방에 들어가시려면 'enter room'을 입력해주세요.\n입력 : ", enter=False)
         msg = recvm(sock)
+        print(msg)
 
         if msg == 'new room':
             room_name, room_maxp = None, None
