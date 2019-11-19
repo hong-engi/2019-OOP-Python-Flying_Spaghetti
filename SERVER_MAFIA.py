@@ -880,7 +880,7 @@ class Room:  # room 바로가기
                                        "{}(이)가 {}래요!".format(name_dic[self.news], self.job[self.news].name),
                           line_chr='#')
                 self.news = None
-            self.happening('morning', 240)  #
+            self.happening('morning', 240)
             self.happening('vote', 240)
             self.vote_result()
             voted_player = self.vote_select
