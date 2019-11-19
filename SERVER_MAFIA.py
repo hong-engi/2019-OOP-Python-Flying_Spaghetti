@@ -41,10 +41,13 @@ def not_con(sock):
 
 
 def remove(sock):
-    global name_dic, client_list
-    del name_dic[sock]
-    client_list.remove(sock)
-    sock.close()
+    try:
+        global name_dic, client_list
+        del name_dic[sock]
+        client_list.remove(sock)
+        sock.close()
+    except:
+        return
 
 
 def cerror_block(inner_func):
@@ -53,7 +56,6 @@ def cerror_block(inner_func):
         try:
             return inner_func(*args, **kwargs)
         except CError:
-            print("연결에 실패했습니다.")
             return
 
     return dec_f
@@ -64,9 +66,9 @@ def error_block(inner_func):
         nonlocal inner_func
         try:
             return inner_func(client, *args, **kwargs)
-        except BaseException as e:
-            print(e)
-            print("{}의 연결에 실패했습니다.".format(name_dic[client]))
+        except:
+            if client in name_dic:
+                print("{}의 연결에 실패했습니다.".format(name_dic[client]))
             remove(client)
             raise CError
 
@@ -74,16 +76,22 @@ def error_block(inner_func):
 
 
 def sendm(client, msg, enter=True, line=True, line_chr='='):
-    if line:
-        msg = line_chr * 100 + '\n' + msg
-    if enter:
-        msg = msg + '\n'
-    error_block(socket.socket.send)(client, msg.encode('utf-8'))
+    try:
+        if line:
+            msg = line_chr * 100 + '\n' + msg
+        if enter:
+            msg = msg + '\n'
+        error_block(socket.socket.send)(client, msg.encode('utf-8'))
+    except CError:
+        return None
 
 
 def recvm(client):
-    x = error_block(socket.socket.recv)(client, 1024)
-    return x.decode('utf-8')
+    try:
+        x = error_block(socket.socket.recv)(client, 1024)
+        return x.decode('utf-8')
+    except CError:
+        return None
 
 
 class Job:
@@ -747,7 +755,7 @@ class Room:  # room 바로가기
                     self.kick(sock)
                     return
                 broadcast(self.p_list, name_dic[sock] + ' : ' + msg, talker=[sock], line=False)
-        except CError:
+        except [CError, KeyError]:
             self.kick(sock)
             return
 
@@ -857,13 +865,13 @@ class Room:  # room 바로가기
                                        "{}(이)가 {}래요!".format(name_dic[self.news], self.job[self.news].name),
                           line_chr='#')
                 self.news = None
-            self.happening('morning', 30)  #
-            self.happening('vote', 30)
+            self.happening('morning', 240)  #
+            self.happening('vote', 240)
             self.vote_result()
             voted_player = self.vote_select
             if voted_player is not None:
-                self.happening('final_words', 20)
-                self.happening('final_vote', 20)
+                self.happening('final_words', 240)
+                self.happening('final_vote', 240)
             if self.final_vote_result():
                 if self.job[voted_player] == '정치인':
                     sendm(voted_player, "당신은 정치인이므로 죽지 않습니다.")
@@ -962,6 +970,7 @@ def wait(sock, name_f=None):
     while True:
         sendm(sock, "방을 만드시려면 'new room'을, 지금 있는 방에 들어가시려면 'enter room'을 입력해주세요.\n입력 : ", enter=False)
         msg = recvm(sock)
+        print(msg)
 
         if msg == 'new room':
             room_name, room_maxp = None, None

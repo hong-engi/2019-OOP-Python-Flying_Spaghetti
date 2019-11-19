@@ -1,5 +1,5 @@
 import socket, threading
-
+import time
 # 접속할 서버의 정보
 server_ip = '127.0.0.1'
 server_port = 50000
@@ -50,7 +50,10 @@ def main_thread():
     # 메시지 받는 스레스 시작
     thread_recv = threading.Thread(target=receive, args=())
     thread_recv.start()
-
+    mysock.send(bytes("김동혁", 'UTF-8'))  # 서버에 메시지를 전송
+    mysock.send(bytes('enter room', 'UTF-8'))  # 서버에 메시지를 전송
+    time.sleep(0.1)
+    mysock.send(bytes('A', 'UTF-8'))  # 서버에 메시지를 전송
     while True:
         try:
             data = input()
