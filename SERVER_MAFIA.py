@@ -16,7 +16,7 @@ client_list = []
 name_dic = {'example': '홍은기'}
 room_list = {}
 min_player, max_player = 1, 12
-mafia_num = {1: 0, 2: 1, 3: 1, 4: 1, 5: 1, 6: 2, 7: 2, 8: 2, 9: 3, 10: 3, 11: 3, 12: 3}
+mafia_num = {1: 0, 2: 1, 3: 1, 4: 1, 5: 1, 6: 2, 7: 2, 8: 3, 9: 3, 10: 3, 11: 3, 12: 3}
 
 
 def isalpha(text):
@@ -230,12 +230,12 @@ class Job:
                 return
             if not final_vote_flag:
                 if msg == '찬성' or msg == 'Y' or msg == 'y':
-                    self.room.upvote += 1
                     sendm(self.player, "찬성하셨습니다!")
                     final_vote_flag = True
                     continue
                 if msg == '반대' or msg == 'N' or msg == 'n':
                     self.room.downvote += 1
+                    self.room.upvote -= 1
                     sendm(self.player, "반대하셨습니다!")
                     final_vote_flag = True
                     continue
@@ -452,14 +452,10 @@ class Doctor(Job):
 
     @cerror_block
     def select(self, player):
-        if not self.use_skill:
-            sendm(self.player, "{}(을)를 치료합니다.".format(name_dic[player]))
-            self.use_skill = True
-            self.room.heal = player
-            return [True, player]
-        else:
-            sendm(self.player, "이미 치료할 사람을 선택하셨어요!")
-            return None
+        sendm(self.player, "{}(을)를 치료합니다.".format(name_dic[player]))
+        self.use_skill = True
+        self.room.heal = player
+        return [True, player]
 
     @cerror_block
     def print_help(self, mode='default'):
@@ -727,7 +723,8 @@ class Room:  # room 바로가기
     @cerror_block
     def final_vote_result(self):
         if self.vote_select is not None:
-            res = self.upvote >= self.downvote
+            res = self.upvote > self.downvote
+            print("찬성 {0}, 반대 {1}".format(self.upvote, self.downvote))
             if res:
                 broadcast(self.p_list, "{}의 처형은 최종 투표에서 찬성되었습니다!".format(name_dic[self.vote_select]))
             else:
@@ -812,7 +809,7 @@ class Room:  # room 바로가기
     @cerror_block
     def kill(self, player, killed):
         if killed == 'by terrorist':
-            sendm(player, "테러리스트가 당신을 희생의 양으로 삼았습니다!", line_chr='!')
+            sendm(player, "테러리스트가 당신을 희생양으로 삼았습니다!", line_chr='!')
             broadcast(self.p_list, "{}(이)가 테러리스트와 같이 먼지가 되었습니다!.".format(name_dic[player]), talker=[player])
         if killed == 'by mafia':
             sendm(player, "마피아가 당신을 죽였습니다!", line_chr='!')
@@ -858,7 +855,7 @@ class Room:  # room 바로가기
                     self.job[player].print_help('night')
                     sendm(player, '다음에도 도움이 필요하다면 "!help"를 입력해주세요.')
             broadcast(self.p_list, "{}번째 밤".format(day_num))
-            self.happening('night', 60)
+            self.happening('night', 25)
             if self.mafia_select is not None:
                 victim = self.mafia_select
                 if self.heal != victim:
@@ -880,13 +877,13 @@ class Room:  # room 바로가기
                                        "{}(이)가 {}래요!".format(name_dic[self.news], self.job[self.news].name),
                           line_chr='#')
                 self.news = None
-            self.happening('morning', 240)
-            self.happening('vote', 240)
+            self.happening('morning', 10)
+            self.happening('vote', 30)
             self.vote_result()
             voted_player = self.vote_select
             if voted_player is not None:
-                self.happening('final_words', 240)
-                self.happening('final_vote', 240)
+                self.happening('final_words', 10)
+                self.happening('final_vote', 30)
             if self.final_vote_result():
                 self.upvote, self.downvote = 0, 0
                 self.vote_list = [0] * self.player_num
