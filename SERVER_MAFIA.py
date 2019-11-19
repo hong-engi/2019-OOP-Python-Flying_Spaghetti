@@ -326,11 +326,11 @@ class Police(Job):
     @cerror_block
     def check_print(self):
         sendm(self.player, "-" * 100 + '\n' + "번호    이름")
-        for player_num in range(len(self.room.p_list)):
-            player = self.room.p_list[player_num]
+        for player_num in range(len(self.check_list)):
+            player = self.check_list[player_num]
             sendm(self.player, "<{}>  -  [{}]".format(player_num + 1, name_dic[player]), line=False,
                   )
-            if not self.room.job[self.room.p_list[player_num]].alive:
+            if not self.room.job[self.check_list[player_num]].alive:
                 sendm(self.player, " - [DEAD]", line=False, enter=False)
             sendm(self.player, " - [{}]".format('마피아' if self.room.job[player].name == '마피아' else '시민'),
                   line=False)
@@ -904,10 +904,12 @@ class Room:  # room 바로가기
                 mafia_n += 1
         for citizen in self.citizen_list:
             if self.job[citizen].alive:
+                if self.job[citizen].name == '정치인':
+                    citizen_n += 1
                 citizen_n += 1
         if mafia_n == 0:
             return 'C'
-        if mafia_n > citizen_n:
+        if mafia_n >= citizen_n:
             return 'M'
         return False
 
@@ -938,7 +940,6 @@ class Room:  # room 바로가기
                 job_num_dic[job_class] = 1
                 cnt += 1
             random.shuffle(self.p_list)
-            job_index = 0
             for player in self.p_list:
                 x = random.choice(list(job_num_dic.keys()))
                 while job_num_dic[x] == 0:
@@ -951,7 +952,6 @@ class Room:  # room 바로가기
                 if self.job[player].name == '영매':
                     self.shaman = player
                 job_num_dic[x] -= 1
-                job_index += 1
             for player in self.job:
                 print('{}:{}'.format(name_dic[player], self.job[player].name))
             return True
