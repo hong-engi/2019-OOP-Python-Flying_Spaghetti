@@ -591,7 +591,7 @@ class Shaman(Job):
         super().night()
 
     @cerror_block
-    def num_select(self, msg, shaman=True):
+    def num_select(self, msg):
         super().num_select(self, msg, shaman=False)
 
     @cerror_block
@@ -831,7 +831,7 @@ class Room:  # room 바로가기
 
     @cerror_block
     def init(self):
-        self.job, self.mafia_list, self.citizen_list = {}, [], []
+        self.job, self.mafia_list, self.citizen_list,self.dead_list = {}, [], [],[]
         self.start_flag = False
         self.mafia_select = None
         self.phase = 0
@@ -945,8 +945,9 @@ class Room:  # room 바로가기
     def job_select(self):
         try:
             job_name_list = [Shaman, Terrorist, Soldier, Sherlock, Reporter, Politician]
-            job_num_dic = {Mafia: mafia_num[self.player_num], Police: 1, Doctor: 1}
-            cnt = job_num_dic[Mafia] + 2
+            #job_num_dic = {Mafia: mafia_num[self.player_num], Police: 1, Doctor: 1}
+            job_num_dic = {Shaman : 1, Mafia : 1, Soldier : 1,Reporter : 1}
+            cnt = job_num_dic[Mafia] + 3
             random.shuffle(job_name_list)
             for job_class in job_name_list:
                 if cnt >= self.player_num:
@@ -986,8 +987,9 @@ def wait(sock, name_f=None):
     while True:
         sendm(sock, "방을 만드시려면 'new room'을, 지금 있는 방에 들어가시려면 'enter room'을 입력해주세요.\n입력 : ", enter=False)
         msg = recvm(sock)
-        print(msg)
-
+        if msg is None:
+            return
+        print('msg' + msg)
         if msg == 'new room':
             room_name, room_maxp = None, None
             sendm(sock, "방의 이름을 입력해주세요. (영어만 가능)\n방 이름 : ", enter=False)
