@@ -219,6 +219,7 @@ class Job:
 
     @cerror_block
     def final_vote(self):
+        final_vote_flag = False
         sendm(self.player, "{}(을)를 죽이는 데 찬성하시면 '찬성' 또는 'y',"
                            "반대하시면 '반대' 또는 'n'을 입력하세요."
                            "입력하지 않으면 찬성표로 투표됩니다.".format(name_dic[self.room.vote_select]))
@@ -227,14 +228,17 @@ class Job:
             if self.room.timeout:
                 self.room.upvote += 1
                 return
-            if msg == '찬성' or msg == 'Y' or msg == 'y':
-                self.room.upvote += 1
-                sendm(self.player, "찬성하셨습니다!")
-                continue
-            if msg == '반대' or msg == 'N' or msg == 'n':
-                self.room.downvote += 1
-                sendm(self.player, "반대하셨습니다!")
-                continue
+            if not final_vote_flag:
+                if msg == '찬성' or msg == 'Y' or msg == 'y':
+                    self.room.upvote += 1
+                    sendm(self.player, "찬성하셨습니다!")
+                    final_vote_flag = True
+                    continue
+                if msg == '반대' or msg == 'N' or msg == 'n':
+                    self.room.downvote += 1
+                    sendm(self.player, "반대하셨습니다!")
+                    final_vote_flag = True
+                    continue
             self.room.talk(self.player, msg)
 
     @cerror_block
