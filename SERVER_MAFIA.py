@@ -531,14 +531,8 @@ class Terrorist(Job):
         if player == self.player:
             sendm(self.player, "자신을 선택할 수 없습니다!")
             return None
-        if not self.use_skill:
-            self.use_skill = True
-            sendm(self.player, "{0}(을)를 선택하셨습니다.\n"
-                               "만약 {0}(이)가 마피아고, 이번 밤에 마피아에게 죽는다면 같이 죽게 됩니다.".format(name_dic[player]))
-            return [True, player]
-        else:
-            sendm(self.player, "이미 목표를 설정했습니다.")
-        return None
+        sendm(self.player, "{0}(을)를 선택하셨습니다.".format(name_dic[player]))
+        return [True, player]
 
     @cerror_block
     def print_help(self, mode='default'):
@@ -609,7 +603,7 @@ class Shaman(Job):
             return [True, player]
         else:
             sendm(self.player, "오늘 밤에는 이미 너무 지쳤어요...")
-        return None
+            return None
 
     @cerror_block
     def night_talk(self, msg):
@@ -872,7 +866,8 @@ class Room:  # room 바로가기
             broadcast(self.p_list, "{}번째 낮".format(day_num))
             if self.news is not None:
                 broadcast(self.p_list, "!!!!속보에요 속보!!!!\n"
-                                       "{}(이)가 {}래요!".format(name_dic[self.news], self.job[self.news].name),
+                                       "{}(이)가 {}래요!\n"
+                                       .format(name_dic[self.news], self.job[self.news].name) + "#" * 100,
                           line_chr='#')
                 self.news = None
             self.happening('morning', 10)
@@ -887,7 +882,7 @@ class Room:  # room 바로가기
             if self.final_vote_result():
                 self.upvote, self.downvote = 0, 0
                 self.vote_list = [0] * self.player_num
-                if self.job[voted_player] == '정치인':
+                if self.job[voted_player].name == '정치인':
                     sendm(voted_player, "당신은 정치인이므로 죽지 않습니다.")
                     broadcast(self.p_list, "{}(은)는 정치인입니다. 투표로 죽지 않습니다.".format(name_dic[self.vote_select]),
                               talker=[voted_player])
@@ -933,7 +928,7 @@ class Room:  # room 바로가기
         if self.game_cnt != 0:
             broadcast(self.p_list,"나가실 분은 10초 안에 'X'를 입력해주세요.. 아니면 게임을 다시 시작하겠습니다.")
         '''
-        self.game_cnt+=1
+        self.game_cnt += 1
         newgame = threading.Thread(target=self.game_start)
         newgame.start()
 
