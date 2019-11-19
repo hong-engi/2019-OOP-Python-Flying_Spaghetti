@@ -686,8 +686,8 @@ class Room:  # room 바로가기
         self.name = name
         self.player_num = num
         self.start_flag, self.end_flag = False, False
-        self.new_game()
         self.timeout = False
+        self.game_cnt = 0
         self.mafia_select, self.vote_select = None, None
         self.upvote, self.downvote = 0, 0
         self.vote_list = [0] * self.player_num
@@ -695,6 +695,7 @@ class Room:  # room 바로가기
         self.shaman = None
         self.news = None
         self.phase = 0
+        self.new_game()
 
     def talk(self, talker, msg):
         broadcast(self.p_list, "{} : {}".format(name_dic[talker], msg), talker=[talker], line=False)
@@ -845,8 +846,8 @@ class Room:  # room 바로가기
         self.start_flag = False
         self.mafia_select = None
         self.phase = 0
-        self.new_game()
         self.shaman = None
+        self.new_game()
 
     @cerror_block
     def daynnight(self):
@@ -858,7 +859,6 @@ class Room:  # room 바로가기
                     sendm(player, '다음에도 도움이 필요하다면 "!help"를 입력해주세요.')
             broadcast(self.p_list, "{}번째 밤".format(day_num))
             self.happening('night', 60)
-        else:
             if self.mafia_select is not None:
                 victim = self.mafia_select
                 if self.heal != victim:
@@ -873,6 +873,7 @@ class Room:  # room 바로가기
             else:
                 broadcast(self.p_list, "오늘 밤은 조용하네요...")
             self.mafia_select, self.heal = None, None
+        else:
             broadcast(self.p_list, "{}번째 낮".format(day_num))
             if self.news is not None:
                 broadcast(self.p_list, "!!!!속보에요 속보!!!!\n"
@@ -931,6 +932,11 @@ class Room:  # room 바로가기
 
     @cerror_block
     def new_game(self):
+        '''
+        if self.game_cnt != 0:
+            broadcast(self.p_list,"나가실 분은 10초 안에 'X'를 입력해주세요.. 아니면 게임을 다시 시작하겠습니다.")
+        '''
+        self.game_cnt+=1
         newgame = threading.Thread(target=self.game_start)
         newgame.start()
 
