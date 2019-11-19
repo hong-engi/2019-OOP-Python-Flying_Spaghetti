@@ -138,8 +138,6 @@ class Job:
 
     @cerror_block
     def vote(self):
-        sendm(self.player, '투표 시간입니다! 투표할 사람을 선택해주세요. \n'
-                           '선택하는 방법은 "!(선택 번호)"를 입력해주시면 됩니다.')
         vote_flag = False
         self.room.print_players(self.player)
         while not self.room.timeout:
@@ -878,6 +876,8 @@ class Room:  # room 바로가기
                           line_chr='#')
                 self.news = None
             self.happening('morning', 10)
+            broadcast(self.p_list, '투표 시간입니다! 투표할 사람을 선택해주세요. \n'
+                                   '선택하는 방법은 "!(선택 번호)"를 입력해주시면 됩니다.')
             self.happening('vote', 30)
             self.vote_result()
             voted_player = self.vote_select
