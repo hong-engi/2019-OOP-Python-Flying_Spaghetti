@@ -127,6 +127,7 @@ dmypy.json
 
 .idea/
 
+CLIENT1.py
 CLIENT2.py
 CLIENT3.py
 CLIENT4.py

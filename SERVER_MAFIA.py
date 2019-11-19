@@ -303,9 +303,9 @@ class Police(Job):
                 self.use_skill = True
                 self.check_list.append(player)
                 if self.room.job[player].name == '마피아':
-                    sendm(self.player, "{}(은)는 마피아입니다!".format(name_dic[player]))
+                    sendm(self.player, "경크! {}(은)는 마피아입니다!!!".format(name_dic[player]))
                 else:
-                    sendm(self.player, "{}(은)는 마피아가 아니었습니다!".format(name_dic[player]))
+                    sendm(self.player, "{}(은)는 마피아가 아니었습니다...".format(name_dic[player]))
                 return [True, player]
         else:
             sendm(self.player, "이미 능력을 사용했습니다!")
@@ -331,7 +331,7 @@ class Police(Job):
         for player_num in range(len(self.room.p_list)):
             player = self.room.p_list[player_num]
             if player in self.check_list:
-                sendm(self.player, "<{}>  -  [{}]".format(player_num + 1, name_dic[player]), line=False,enter = False
+                sendm(self.player, "<{}>  -  [{}]".format(player_num + 1, name_dic[player]), line=False, enter=False
                       )
                 if not self.room.job[self.room.p_list[player_num]].alive:
                     sendm(self.player, " - [DEAD]", line=False, enter=False)
