@@ -29,7 +29,7 @@ def receive():
             break
         data=data.decode('UTF-8')
         if data == '2H3DTESTAB!%FTTHFASDF':  # 연결 확인
-            pass
+            continue
 
         if data == 'fEEBgFFDASDL%%@FM' or data == '@)!(확인':  # timer
             mysock.send(bytes('test_message'+data, 'UTF-8'))
