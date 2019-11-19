@@ -237,7 +237,7 @@ class Job:
                 if msg == '반대' or msg == 'N' or msg == 'n':
                     self.room.downvote += 1
                     sendm(self.player, "반대하셨습니다!")
-                    final_vote_flag == False
+                    final_vote_flag = True
                     continue
             self.room.talk(self.player, msg)
 
