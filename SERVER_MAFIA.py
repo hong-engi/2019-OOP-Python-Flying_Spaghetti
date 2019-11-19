@@ -723,7 +723,7 @@ class Room:  # room 바로가기
     @cerror_block
     def final_vote_result(self):
         if self.vote_select is not None:
-            res = self.upvote > self.downvote
+            res = self.upvote >= self.downvote
             print("찬성 {0}, 반대 {1}".format(self.upvote, self.downvote))
             if res:
                 broadcast(self.p_list, "{}의 처형은 최종 투표에서 찬성되었습니다!".format(name_dic[self.vote_select]))
