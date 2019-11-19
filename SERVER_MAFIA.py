@@ -864,7 +864,7 @@ class Room:  # room 바로가기
                 if self.heal != victim:
                     if self.job[victim].name == '군인' and self.job[victim].armor:
                         sendm(victim, "마피아의 공격을 한 번 막아냈습니다! 방탄복이 부서져 이제는 방어할 수 없습니다.")
-                        broadcast(self.p_list, "{}(은)는 군인입니다. 마피아의 공격을 막아냈습니다.!")
+                        broadcast(self.p_list, "{}(은)는 군인입니다. 마피아의 공격을 막아냈습니다!".format(name_dic[victim]))
                         self.job[victim].armor = False
                     else:
                         self.kill(victim, 'by mafia')
