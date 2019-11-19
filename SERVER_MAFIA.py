@@ -920,10 +920,12 @@ class Room:  # room 바로가기
                 mafia_n += 1
         for citizen in self.citizen_list:
             if self.job[citizen].alive:
+                if self.job[citizen].name == '정치인':
+                    citizen_n += 1
                 citizen_n += 1
         if mafia_n == 0:
             return 'C'
-        if mafia_n > citizen_n:
+        if mafia_n >= citizen_n:
             return 'M'
         return False
 
