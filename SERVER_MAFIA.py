@@ -115,7 +115,10 @@ class Job:
                 self.print_help()
                 continue
             if msg[0:1] == '!':
-                x = self.num_select(msg)
+                if self.name == '영매':
+                    x= self.dead_select(msg)
+                else:
+                    x = self.alive_select(msg)
                 if x is not False:
                     self.sel = self.select(self.room.p_list[x])
                 continue
@@ -146,7 +149,7 @@ class Job:
                 break
             if msg[0:1] == '!':
                 if not vote_flag:
-                    x = self.num_select(msg)
+                    x = self.alive_select(msg)
                     if x is False:
                         sendm(self.player, "잘못된 입력입니다.", line=False)
                         continue
@@ -189,16 +192,29 @@ class Job:
                 sendm(self.player, "성불되어서 채팅을 사용할 수 없습니다. 닥치세요.")
 
     @cerror_block
-    def num_select(self, msg, shaman=True):
+    def alive_select(self, msg):
         msg = msg[1:].strip(' ')
         if msg.isdigit() and 1 <= int(msg) <= self.room.player_num:
-            if self.room.job[self.room.p_list[int(msg) - 1]].alive == shaman:
+            if self.room.job[self.room.p_list[int(msg) - 1]].alive:
                 return int(msg) - 1
             else:
-                sendm(self.player, "선택 대상이 아닙니다")
+                sendm(self.player, "사망한 플레이어는 선택할 수 없습니다.")
                 return False
         else:
-            sendm(self.player, "잘못 입력하셨습니다.")
+            sendm(self.player, "잘못된 입력입니다.")
+            return False
+
+    @cerror_block
+    def dead_select(self, msg):
+        msg = msg[1:].strip(' ')
+        if msg.isdigit() and 1 <= int(msg) <= self.room.player_num:
+            if not self.room.job[self.room.p_list[int(msg) - 1]].alive:
+                return int(msg) - 1
+            else:
+                sendm(self.player, "살아 있는 플레이어는 선택할 수 없습니다.")
+                return False
+        else:
+            sendm(self.player, "잘못된 입력입니다.")
             return False
 
     @cerror_block
@@ -260,8 +276,7 @@ class Mafia(Job):
 
     @cerror_block
     def night_talk(self, msg):
-        broadcast(self.room.mafia_list, '[MAFIA]{} : {}'.format(name_dic[self.player], msg),
-                  talker=[self.player])
+        broadcast(self.room.mafia_list, '[MAFIA]{} : {}'.format(name_dic[self.player], msg), talker=[self.player])
         broadcast(self.room.dead_list, '[MAFIA]{} : {}'.format(name_dic[self.player], msg), talker=self.room.mafia_list)
 
     @cerror_block
@@ -589,10 +604,6 @@ class Shaman(Job):
     def night(self):
         self.use_skill = False
         super().night()
-
-    @cerror_block
-    def num_select(self, msg):
-        super().num_select(self, msg, shaman=False)
 
     @cerror_block
     def select(self, player):

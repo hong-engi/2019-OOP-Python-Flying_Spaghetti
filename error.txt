@@ -4,7 +4,7 @@
 
 최후의 반론때 플레이어가 채팅하면, 찬반 투표 때 그 플레이어를 제외한 나머지에게 이상한거 날아옴 ('플레이어3 : test_messagefEEBgFFDASDL%%@FM')
 
-영매가 살아있는 사람 성불 시도 시 server 측 에러 발생, 낮에 나머지에게 이상한거 날아옴 ('플레이어2 : !5test_messagefEEBgFFDASDL%%@FM')
+189번 줄에서 문제 발생 (if self.room.shaman is not None and self.room.shaman.alive:)
 
 client가 게임 도중 강제종료 시 에러 발생.
 
