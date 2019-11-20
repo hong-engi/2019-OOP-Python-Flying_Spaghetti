@@ -831,7 +831,7 @@ class Room:  # room 바로가기
 
     @cerror_block
     def init(self):
-        self.job, self.mafia_list, self.citizen_list,self.dead_list = {}, [], [],[]
+        self.job, self.mafia_list, self.citizen_list, self.dead_list = {}, [], [], []
         self.start_flag = False
         self.mafia_select = None
         self.phase = 0
@@ -867,7 +867,7 @@ class Room:  # room 바로가기
             if self.news is not None:
                 broadcast(self.p_list, "!!!!속보에요 속보!!!!\n"
                                        "{}(이)가 {}래요!\n"
-                                       .format(name_dic[self.news], self.job[self.news].name) + "#" * 100,
+                          .format(name_dic[self.news], self.job[self.news].name) + "#" * 100,
                           line_chr='#')
                 self.news = None
             self.happening('morning', 10)
@@ -945,8 +945,8 @@ class Room:  # room 바로가기
     def job_select(self):
         try:
             job_name_list = [Shaman, Terrorist, Soldier, Sherlock, Reporter, Politician]
-            #job_num_dic = {Mafia: mafia_num[self.player_num], Police: 1, Doctor: 1}
-            job_num_dic = {Shaman : 1, Mafia : 1, Soldier : 1,Reporter : 1}
+            # job_num_dic = {Mafia: mafia_num[self.player_num], Police: 1, Doctor: 1}
+            job_num_dic = {Shaman: 1, Mafia: 1, Police: 1, Doctor: 1}
             cnt = job_num_dic[Mafia] + 3
             random.shuffle(job_name_list)
             for job_class in job_name_list:
