@@ -5,6 +5,7 @@
 최후의 반론때 플레이어가 채팅하면, 찬반 투표 때 그 플레이어를 제외한 나머지에게 이상한거 날아옴 ('플레이어3 : test_messagefEEBgFFDASDL%%@FM')
 
 189번 줄에서 문제 발생 (if self.room.shaman is not None and self.room.shaman.alive:)
+self.room.shaman.alive에서 문제 생기는 것으로 보임. 이거 지우면 성불당한 애가 채팅안되는 거 작동.
 
 client가 게임 도중 강제종료 시 에러 발생.
 
@@ -24,5 +25,7 @@ client가 게임 도중 강제종료 시 에러 발생.
 
 [기타 건의사항]
 테러리스트가 반론때 선택하도록 변경
+
+성불당했을 때 메시지 출력
 
 입장 순서대로 플레이어 번호 정해지게 변경하면 좋겠..는데...

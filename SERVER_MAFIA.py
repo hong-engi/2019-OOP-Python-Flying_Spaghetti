@@ -186,7 +186,9 @@ class Job:
             send_msg = '[DEAD]{} : '.format(name_dic[self.player]) + msg
             if not self.shut_up:
                 broadcast(self.room.dead_list, send_msg, talker=[self.player])
-                if self.room.shaman is not None and self.room.shaman.alive:
+                # if self.room.shaman is not None and self.room.shaman.alive:
+                print(self.room.shaman)
+                if self.room.shaman is not None:
                     sendm(self.room.shaman, send_msg)
             else:
                 sendm(self.player, "성불되어서 채팅을 사용할 수 없습니다. 닥치세요.")
@@ -957,8 +959,8 @@ class Room:  # room 바로가기
         try:
             job_name_list = [Shaman, Terrorist, Soldier, Sherlock, Reporter, Politician]
             # job_num_dic = {Mafia: mafia_num[self.player_num], Police: 1, Doctor: 1}
-            job_num_dic = {Shaman: 1, Mafia: 1, Police: 1, Doctor: 1}
-            cnt = job_num_dic[Mafia] + 3
+            job_num_dic = {Shaman: 1, Mafia: 1, Sherlock: 1, Reporter: 1, Politician: 1}
+            cnt = job_num_dic[Mafia] + 4
             random.shuffle(job_name_list)
             for job_class in job_name_list:
                 if cnt >= self.player_num:
