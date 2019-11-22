@@ -806,7 +806,12 @@ class Room:  # room 바로가기
             broadcast(self.p_list, "마피아가 시민보다 많습니다."
                                    "마피아 팀이 승리했습니다!")
         self.job_print()
-        self.init()
+        broadcast(self.p_list, "그럼 안녕히!")
+        for player in reversed(self.p_list):
+            print(self.p_list)
+            print(player)
+            print("")
+            self.kick(player)
         return
 
     @cerror_block
@@ -962,7 +967,7 @@ class Room:  # room 바로가기
         try:
             job_name_list = [Shaman, Terrorist, Soldier, Sherlock, Reporter, Politician]
             # job_num_dic = {Mafia: mafia_num[self.player_num], Police: 1, Doctor: 1}
-            job_num_dic = {Shaman: 1, Mafia: 1, Terrorist: 1}
+            job_num_dic = {Mafia: 2, Terrorist: 1}
             cnt = job_num_dic[Mafia] + 4
             random.shuffle(job_name_list)
             for job_class in job_name_list:
