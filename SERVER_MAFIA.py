@@ -843,10 +843,15 @@ class Room:  # room 바로가기
     @cerror_block
     def init(self):
         self.job, self.mafia_list, self.citizen_list, self.dead_list = {}, [], [], []
-        self.start_flag = False
-        self.mafia_select = None
-        self.phase = 0
+        self.start_flag, self.end_flag = False, False
+        self.mafia_select, self.vote_select = None, None
+        self.upvote, self.downvote = 0, 0
+        self.timeout = False
+        self.vote_list = [0] * self.player_num
+        self.heal = None
         self.shaman = None
+        self.news = None
+        self.phase = 0
         self.new_game()
 
     @cerror_block
