@@ -126,7 +126,7 @@ class Job:
                 self.night_talk(msg)
 
     def night_talk(self, msg):
-        sendm(self.player, "밤에 채팅을 할 수 없는 직업입니다.")
+        pass
 
     @cerror_block
     def morning(self):
@@ -277,7 +277,6 @@ class Mafia(Job):
 
     @cerror_block
     def night_talk(self, msg):
-        print(name_dic[self.player])
         broadcast(self.room.mafia_list, '[MAFIA]{} : {}'.format(name_dic[self.player], msg), talker=[self.player])
         broadcast(self.room.dead_list, '[MAFIA]{} : {}'.format(name_dic[self.player], msg), talker=[self.player])
 
@@ -862,7 +861,7 @@ class Room:  # room 바로가기
     def news_print(self):
         if self.news is not None:
             broadcast(self.p_list,
-                      "!!!!속보에요 속보!!!!\n{}(이)가 {}래요!".format(name_dic[self.news], self.job[self.news].name) + "#" * 100,
+                      "!!!!속보에요 속보!!!!\n{}(이)가 {}래요!\n".format(name_dic[self.news], self.job[self.news].name) + "#" * 100,
                       line_chr='#')
             self.news = None
 
@@ -884,15 +883,15 @@ class Room:  # room 바로가기
         else:
             broadcast(self.p_list, "{}번째 낮".format(day_num))
             self.news_print()
-            self.happening('morning', 10)
+            self.happening('morning', 15 * (self.player_num - len(self.dead_list)))
             broadcast(self.p_list, '투표 시간입니다! 투표할 사람을 선택해주세요. \n'
                                    '선택하는 방법은 "!(선택 번호)"를 입력해주시면 됩니다.')
-            self.happening('vote', 20)
+            self.happening('vote', 15)
             self.vote_result()
             voted_player = self.vote_select
             if voted_player is not None:
-                self.happening('final_words', 10)
-                self.happening('final_vote', 20)
+                self.happening('final_words', 15)
+                self.happening('final_vote', 10)
             if self.final_vote_result():
                 self.kill(voted_player, 'by vote')
             self.upvote, self.downvote, self.vote_list = 0, 0, [0] * self.player_num
@@ -949,7 +948,7 @@ class Room:  # room 바로가기
     def job_select(self):
         try:
             job_name_list = [Shaman, Terrorist, Soldier, Sherlock, Reporter, Politician]
-            job_num_dic = {Mafia: mafia_num[self.player_num], Police: 1, Doctor: 1}
+            job_num_dic = {Mafia: mafia_num[self.player_num], Reporter: 1, Terrorist: 1}
             cnt = job_num_dic[Mafia] + 2
             random.shuffle(job_name_list)
             for job_class in job_name_list:

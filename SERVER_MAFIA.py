@@ -611,6 +611,7 @@ class Shaman(Job):
         if not self.use_skill:
             self.use_skill = True
             sendm(self.player, "{0}을 성불했습니다. {0}의 직업은 {1}입니다.".format(name_dic[player], self.room.job[player].name))
+            broadcast([player], "성불당했습니다.")
             self.room.job[player].shut_up = True
             return [True, player]
         else:
@@ -839,7 +840,9 @@ class Room:  # room 바로가기
             broadcast(self.p_list, "{}(이)가 투표로 죽었습니다.".format(name_dic[player]), talker=[player])
         if self.job[player].name == '테러리스트':
             if self.job[player].sel is not None:
-                self.kill(self.job[player].sel[1], 'by terrorist')
+                selected_player = self.job[player].sel[1]
+                if self.job[selected_player].name == '마피아':
+                    self.kill(self.job[player].sel[1], 'by terrorist')
             self.job[player].sel = None
         if self.job[player].name == '기자':
             self.news = None
@@ -948,8 +951,10 @@ class Room:  # room 바로가기
     def job_select(self):
         try:
             job_name_list = [Shaman, Terrorist, Soldier, Sherlock, Reporter, Politician]
-            job_num_dic = {Mafia: mafia_num[self.player_num], Reporter: 1, Terrorist: 1}
-            cnt = job_num_dic[Mafia] + 2
+            # job_num_dic = {Mafia: mafia_num[self.player_num], Reporter: 1, Terrorist: 1}
+            # cnt = job_num_dic[Mafia] + 2
+            job_num_dic = {Mafia: mafia_num[self.player_num], Shaman: 1}
+            cnt = job_num_dic[Mafia] + 1
             random.shuffle(job_name_list)
             for job_class in job_name_list:
                 if cnt >= self.player_num:
