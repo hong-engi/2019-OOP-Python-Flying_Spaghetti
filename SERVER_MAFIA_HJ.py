@@ -126,7 +126,7 @@ class Job:
                 self.night_talk(msg)
 
     def night_talk(self, msg):
-        pass
+        sendm(self.player, "밤에 채팅을 할 수 없는 직업입니다.")
 
     @cerror_block
     def morning(self):
@@ -706,7 +706,7 @@ class Room:  # room 바로가기
         self.timeout = False
         time.sleep(sec)
         self.timeout = True
-        broadcast(self.p_list, "fEEBgFFDASDL%%@FM", line=False, enter=False, talker=self.dead_list)
+        broadcast(self.p_list, "fEEBgFFDASDL%%@FM", line=False, enter=False, talker=[])
         print("Time's UP!!!")
         return
 
@@ -949,7 +949,7 @@ class Room:  # room 바로가기
     def job_select(self):
         try:
             job_name_list = [Shaman, Terrorist, Soldier, Sherlock, Reporter, Politician]
-            job_num_dic = {Mafia: mafia_num[self.player_num], Terrorist: 2}
+            job_num_dic = {Mafia: mafia_num[self.player_num], Police: 1, Doctor: 1}
             cnt = job_num_dic[Mafia] + 2
             random.shuffle(job_name_list)
             for job_class in job_name_list:
@@ -974,8 +974,6 @@ class Room:  # room 바로가기
                 job_index += 1
             for player in self.job:
                 print('{}:{}'.format(name_dic[player], self.job[player].name))
-            for player in self.mafia_list:
-                print(name_dic[player])
             return True
         except Exception as e:
             print(e)
