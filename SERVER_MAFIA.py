@@ -1040,18 +1040,26 @@ def wait(sock, name_f=None):
                 continue
             else:
                 added_flag = False
+                back_flag = False
                 while not added_flag:
                     room_list_print(sock)
-                    sendm(sock, "들어가고 싶은 방의 이름을 입력해주세요.\n방 이름 : ", enter=False)
+                    sendm(sock, "들어가고 싶은 방의 이름을 입력해주세요.\n뒤로 가려면 '!뒤로!'라고 입력해주세요.\n방 이름 : ", enter=False)
                     room_name = None
                     while room_name not in room_list:
+                        if room_name == '!뒤로!':
+                            back_flag = True
+                            break
                         if room_name is not None:
                             sendm(sock, "해당 이름을 가진 방이 없습니다.\n방 이름 : ", enter=False)
                         room_name = recvm(sock)
+                    if back_flag:
+                        break
                     sendm(sock, "보내드릴게요.")
                     added_flag = room_list[room_name].people_add(sock)
                     if not added_flag:
                         continue
+                if back_flag:
+                    continue
                 return
 
 
