@@ -894,12 +894,12 @@ class Room:  # room 바로가기
             self.happening('morning', 10)
             broadcast(self.p_list, '투표 시간입니다! 투표할 사람을 선택해주세요. \n'
                                    '선택하는 방법은 "!(선택 번호)"를 입력해주시면 됩니다.')
-            self.happening('vote', 30)
+            self.happening('vote', 20)
             self.vote_result()
             voted_player = self.vote_select
             if voted_player is not None:
                 self.happening('final_words', 10)
-                self.happening('final_vote', 30)
+                self.happening('final_vote', 20)
             if self.final_vote_result():
                 self.upvote, self.downvote = 0, 0
                 self.vote_list = [0] * self.player_num
@@ -966,9 +966,8 @@ class Room:  # room 바로가기
     def job_select(self):
         try:
             job_name_list = [Shaman, Terrorist, Soldier, Sherlock, Reporter, Politician]
-            # job_num_dic = {Mafia: mafia_num[self.player_num], Police: 1, Doctor: 1}
-            job_num_dic = {Mafia: 2, Terrorist: 1}
-            cnt = job_num_dic[Mafia] + 4
+            job_num_dic = {Mafia: mafia_num[self.player_num], Police: 1, Doctor: 1}
+            cnt = job_num_dic[Mafia] + 2
             random.shuffle(job_name_list)
             for job_class in job_name_list:
                 if cnt >= self.player_num:
