@@ -706,7 +706,7 @@ class Room:  # room 바로가기
         self.timeout = False
         time.sleep(sec)
         self.timeout = True
-        broadcast(self.p_list, "fEEBgFFDASDL%%@FM", line=False, enter=False, talker=[])
+        broadcast(self.p_list, "fEEBgFFDASDL%%@FM", line=False, enter=False, talker=self.dead_list)
         print("Time's UP!!!")
         return
 
