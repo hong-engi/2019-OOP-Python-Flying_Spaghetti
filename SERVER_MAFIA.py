@@ -114,9 +114,9 @@ class Job:
             if msg == '!help':
                 self.print_help()
                 continue
-            if msg[0:1] == '!':
+            if msg[0] == '!':
                 if self.name == '영매':
-                    x= self.dead_select(msg)
+                    x = self.dead_select(msg)
                 else:
                     x = self.alive_select(msg)
                 if x is not False:
@@ -224,7 +224,8 @@ class Job:
             msg = recvm(self.player)
             if self.room.timeout:
                 return
-            broadcast(self.room.p_list, "< {} : {} >".format(name_dic[self.player], msg), talker=[self.player], line=False)
+            broadcast(self.room.p_list, "< {} : {} >".format(name_dic[self.player], msg), talker=[self.player],
+                      line=False)
         else:
             while not self.room.timeout:
                 recvm(self.player)
@@ -276,8 +277,9 @@ class Mafia(Job):
 
     @cerror_block
     def night_talk(self, msg):
+        print(name_dic[self.player])
         broadcast(self.room.mafia_list, '[MAFIA]{} : {}'.format(name_dic[self.player], msg), talker=[self.player])
-        broadcast(self.room.dead_list, '[MAFIA]{} : {}'.format(name_dic[self.player], msg), talker=self.room.mafia_list)
+        broadcast(self.room.dead_list, '[MAFIA]{} : {}'.format(name_dic[self.player], msg), talker=[self.player])
 
     @cerror_block
     def print_help(self, mode='default'):
@@ -705,6 +707,7 @@ class Room:  # room 바로가기
         time.sleep(sec)
         self.timeout = True
         broadcast(self.p_list, "fEEBgFFDASDL%%@FM", line=False, enter=False, talker=self.dead_list)
+        print("Time's UP!!!")
         return
 
     @cerror_block
@@ -808,21 +811,31 @@ class Room:  # room 바로가기
         self.job_print()
         broadcast(self.p_list, "그럼 안녕히!")
         for player in reversed(self.p_list):
-            print(self.p_list)
-            print(player)
-            print("")
             self.kick(player)
         return
 
     @cerror_block
     def kill(self, player, killed):
+        if self.heal == player:
+            broadcast(self.p_list, "{}(이)가 마피아의 공격을 받았지만, 의사의 치료를 받고 살았습니다!".format(name_dic[player]))
+            return
         if killed == 'by terrorist':
             sendm(player, "테러리스트가 당신을 희생양으로 삼았습니다!", line_chr='!')
             broadcast(self.p_list, "{}(이)가 테러리스트와 같이 먼지가 되었습니다!.".format(name_dic[player]), talker=[player])
         if killed == 'by mafia':
+            if self.job[player].name == '군인' and self.job[player].armor:  # 군인
+                sendm(player, "마피아의 공격을 한 번 막아냈습니다! 방탄복이 부서져 이제는 방어할 수 없습니다.")
+                broadcast(self.p_list, "{}(은)는 군인입니다. 마피아의 공격을 막아냈습니다!".format(name_dic[player]))
+                self.job[player].armor = False
+                return
             sendm(player, "마피아가 당신을 죽였습니다!", line_chr='!')
             broadcast(self.p_list, "{}(이)가 마피아의 공격을 받고 사망했습니다!".format(name_dic[player]), talker=[player])
         if killed == 'by vote':
+            if self.job[player].name == '정치인':
+                sendm(player, "당신은 정치인이므로 죽지 않습니다.")
+                broadcast(self.p_list, "{}(은)는 정치인입니다. 투표로 죽지 않습니다.".format(name_dic[self.vote_select]),
+                          talker=[player])
+                return
             sendm(player, "민주주의의 법칙으로 인해 당신은 죽었습니다.", line_chr='!')
             broadcast(self.p_list, "{}(이)가 투표로 죽었습니다.".format(name_dic[player]), talker=[player])
         if self.job[player].name == '테러리스트':
@@ -846,51 +859,31 @@ class Room:  # room 바로가기
         broadcast(self.p_list, text, line=False)
 
     @cerror_block
-    def init(self):
-        self.job, self.mafia_list, self.citizen_list, self.dead_list = {}, [], [], []
-        self.start_flag, self.end_flag = False, False
-        self.mafia_select, self.vote_select = None, None
-        self.upvote, self.downvote = 0, 0
-        self.timeout = False
-        self.vote_list = [0] * self.player_num
-        self.heal = None
-        self.shaman = None
-        self.news = None
-        self.phase = 0
-        self.new_game()
+    def news_print(self):
+        if self.news is not None:
+            broadcast(self.p_list,
+                      "!!!!속보에요 속보!!!!\n{}(이)가 {}래요!".format(name_dic[self.news], self.job[self.news].name) + "#" * 100,
+                      line_chr='#')
+            self.news = None
 
     @cerror_block
     def daynnight(self):
         day_num = self.phase // 2
+        if self.phase == 1:
+            for player in self.p_list:
+                self.job[player].print_help('night')
+                sendm(player, '다음에도 도움이 필요하다면 "!help"를 입력해주세요.')
         if self.phase % 2 == 1:
-            if day_num == 0:
-                for player in self.p_list:
-                    self.job[player].print_help('night')
-                    sendm(player, '다음에도 도움이 필요하다면 "!help"를 입력해주세요.')
             broadcast(self.p_list, "{}번째 밤".format(day_num))
             self.happening('night', 25)
             if self.mafia_select is not None:
-                victim = self.mafia_select
-                if self.heal != victim:
-                    if self.job[victim].name == '군인' and self.job[victim].armor:
-                        sendm(victim, "마피아의 공격을 한 번 막아냈습니다! 방탄복이 부서져 이제는 방어할 수 없습니다.")
-                        broadcast(self.p_list, "{}(은)는 군인입니다. 마피아의 공격을 막아냈습니다!".format(name_dic[victim]))
-                        self.job[victim].armor = False
-                    else:
-                        self.kill(victim, 'by mafia')
-                else:
-                    broadcast(self.p_list, "{}(이)가 마피아의 공격을 받았지만, 의사의 치료를 받고 살았습니다!".format(name_dic[victim]))
+                self.kill(self.mafia_select, 'by mafia')
             else:
                 broadcast(self.p_list, "오늘 밤은 조용하네요...")
             self.mafia_select, self.heal = None, None
         else:
             broadcast(self.p_list, "{}번째 낮".format(day_num))
-            if self.news is not None:
-                broadcast(self.p_list, "!!!!속보에요 속보!!!!\n"
-                                       "{}(이)가 {}래요!\n"
-                          .format(name_dic[self.news], self.job[self.news].name) + "#" * 100,
-                          line_chr='#')
-                self.news = None
+            self.news_print()
             self.happening('morning', 10)
             broadcast(self.p_list, '투표 시간입니다! 투표할 사람을 선택해주세요. \n'
                                    '선택하는 방법은 "!(선택 번호)"를 입력해주시면 됩니다.')
@@ -901,14 +894,8 @@ class Room:  # room 바로가기
                 self.happening('final_words', 10)
                 self.happening('final_vote', 20)
             if self.final_vote_result():
-                self.upvote, self.downvote = 0, 0
-                self.vote_list = [0] * self.player_num
-                if self.job[voted_player].name == '정치인':
-                    sendm(voted_player, "당신은 정치인이므로 죽지 않습니다.")
-                    broadcast(self.p_list, "{}(은)는 정치인입니다. 투표로 죽지 않습니다.".format(name_dic[self.vote_select]),
-                              talker=[voted_player])
-                else:
-                    self.kill(voted_player, 'by vote')
+                self.kill(voted_player, 'by vote')
+            self.upvote, self.downvote, self.vote_list = 0, 0, [0] * self.player_num
             self.vote_select = None
 
     @cerror_block
@@ -945,10 +932,6 @@ class Room:  # room 바로가기
 
     @cerror_block
     def new_game(self):
-        '''
-        if self.game_cnt != 0:
-            broadcast(self.p_list,"나가실 분은 10초 안에 'X'를 입력해주세요.. 아니면 게임을 다시 시작하겠습니다.")
-        '''
         self.game_cnt += 1
         newgame = threading.Thread(target=self.game_start)
         newgame.start()
@@ -966,7 +949,7 @@ class Room:  # room 바로가기
     def job_select(self):
         try:
             job_name_list = [Shaman, Terrorist, Soldier, Sherlock, Reporter, Politician]
-            job_num_dic = {Mafia: mafia_num[self.player_num], Police: 1, Doctor: 1}
+            job_num_dic = {Mafia: mafia_num[self.player_num], Terrorist: 2}
             cnt = job_num_dic[Mafia] + 2
             random.shuffle(job_name_list)
             for job_class in job_name_list:
@@ -991,6 +974,8 @@ class Room:  # room 바로가기
                 job_index += 1
             for player in self.job:
                 print('{}:{}'.format(name_dic[player], self.job[player].name))
+            for player in self.mafia_list:
+                print(name_dic[player])
             return True
         except Exception as e:
             print(e)
