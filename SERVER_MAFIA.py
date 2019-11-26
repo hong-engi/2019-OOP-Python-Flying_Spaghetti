@@ -277,7 +277,6 @@ class Mafia(Job):
 
     @cerror_block
     def night_talk(self, msg):
-        print(name_dic[self.player])
         broadcast(self.room.mafia_list, '[MAFIA]{} : {}'.format(name_dic[self.player], msg), talker=[self.player])
         broadcast(self.room.dead_list, '[MAFIA]{} : {}'.format(name_dic[self.player], msg), talker=[self.player])
 
