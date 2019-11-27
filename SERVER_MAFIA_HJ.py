@@ -156,10 +156,10 @@ class Job:
                     else:
                         vote_flag = True
                         sel_player = self.room.p_list[x]
-                        sendm(self.player, "{}(을)를 선택하셨습니다.".format(name_dic[sel_player]))
+                        sendm(self.player, " - {}(을)를 선택하셨습니다.".format(name_dic[sel_player]))
                         if self.name == '정치인':
                             sendm(self.player, "당신의 권력으로 두 표를 넣습니다.", line=False)
-                        broadcast(self.room.p_list, "{}에 한 표!".format(name_dic[sel_player]),
+                        broadcast(self.room.p_list, " - {}에 한 표!".format(name_dic[sel_player]),
                                   talker=[self.player])
                         if self.name == '정치인':
                             self.room.vote_list[x] += 1
@@ -220,31 +220,31 @@ class Job:
     @cerror_block
     def final_words(self):
         if self.player == self.room.vote_select:
-            broadcast(self.room.p_list, "{}의 최후의 한 마디가 있겠습니다!".format(name_dic[self.player]))
-            msg = recvm(self.player)
-            if self.room.timeout:
-                return
-            broadcast(self.room.p_list, "< {} : {} >".format(name_dic[self.player], msg), talker=[self.player],
-                      line=False)
-        else:
             while not self.room.timeout:
-                recvm(self.player)
+                msg = recvm(self.player)
                 if self.room.timeout:
                     return
+                broadcast(self.room.p_list, "< {} : {} >".format(name_dic[self.player], msg), talker=[self.player],
+                          line=False)
+        else:
+            if self.room.timeout:
+                return
 
     @cerror_block
     def final_vote(self):
         final_vote_flag = False
-        sendm(self.player, "{}(을)를 죽이는 데 찬성하시면 '찬성' 또는 'y',"
-                           "반대하시면 '반대' 또는 'n'을 입력하세요."
-                           "입력하지 않으면 반대표로 투표됩니다.".format(name_dic[self.room.vote_select]))
         while not self.room.timeout:
             msg = recvm(self.player)
             if self.room.timeout:
+                if self.name == '정치인':
+                    self.room.downvote += 1
                 self.room.downvote += 1
                 return
             if not final_vote_flag:
                 if msg == '찬성' or msg == 'Y' or msg == 'y':
+                    if self.name == '정치인':
+                        self.room.upvote += 1
+                        self.room.downvote -= 1
                     self.room.upvote += 1
                     self.room.downvote -= 1
                     sendm(self.player, "찬성하셨습니다!")
@@ -254,7 +254,8 @@ class Job:
                     sendm(self.player, "반대하셨습니다!")
                     final_vote_flag = True
                     continue
-            self.room.talk(self.player, msg)
+            if msg[-17:] != 'fEEBgFFDASDL%%@FM':
+                self.room.talk(self.player, msg)
 
     @cerror_block
     def select(self, player):
@@ -611,6 +612,7 @@ class Shaman(Job):
         if not self.use_skill:
             self.use_skill = True
             sendm(self.player, "{0}을 성불했습니다. {0}의 직업은 {1}입니다.".format(name_dic[player], self.room.job[player].name))
+            broadcast([player], "성불당했습니다.")
             self.room.job[player].shut_up = True
             return [True, player]
         else:
@@ -705,7 +707,7 @@ class Room:  # room 바로가기
         self.timeout = False
         time.sleep(sec)
         self.timeout = True
-        broadcast(self.p_list, "fEEBgFFDASDL%%@FM", line=False, enter=False, talker=[])
+        broadcast(self.p_list, "fEEBgFFDASDL%%@FM", line=False, enter=False, talker=self.dead_list)
         print("Time's UP!!!")
         return
 
@@ -839,7 +841,9 @@ class Room:  # room 바로가기
             broadcast(self.p_list, "{}(이)가 투표로 죽었습니다.".format(name_dic[player]), talker=[player])
         if self.job[player].name == '테러리스트':
             if self.job[player].sel is not None:
-                self.kill(self.job[player].sel[1], 'by terrorist')
+                selected_player = self.job[player].sel[1]
+                if self.job[selected_player].name == '마피아':
+                    self.kill(self.job[player].sel[1], 'by terrorist')
             self.job[player].sel = None
         if self.job[player].name == '기자':
             self.news = None
@@ -883,14 +887,21 @@ class Room:  # room 바로가기
         else:
             broadcast(self.p_list, "{}번째 낮".format(day_num))
             self.news_print()
-            self.happening('morning', 15 * (self.player_num - len(self.dead_list)))
+            # self.happening('morning', 15 * (self.player_num - len(self.dead_list)))
+            self.happening('morning', 10)
             broadcast(self.p_list, '투표 시간입니다! 투표할 사람을 선택해주세요. \n'
                                    '선택하는 방법은 "!(선택 번호)"를 입력해주시면 됩니다.')
             self.happening('vote', 15)
             self.vote_result()
             voted_player = self.vote_select
             if voted_player is not None:
+                broadcast(self.p_list, "{}의 최후의 한 마디가 있겠습니다!".format(name_dic[self.vote_select]))
                 self.happening('final_words', 15)
+                broadcast(self.p_list, "찬반 투표 시간입니다!\n"
+                                       "{}(을)를 죽이는 데 찬성하시면 '찬성' 또는 'y',\n"
+                                       "반대하시면 '반대' 또는 'n'을 입력하세요.\n"
+                                       "입력하지 않으면 반대표로 투표됩니다.".format(name_dic[self.vote_select])
+                          )
                 self.happening('final_vote', 10)
             if self.final_vote_result():
                 self.kill(voted_player, 'by vote')
@@ -948,7 +959,9 @@ class Room:  # room 바로가기
     def job_select(self):
         try:
             job_name_list = [Shaman, Terrorist, Soldier, Sherlock, Reporter, Politician]
-            job_num_dic = {Mafia: mafia_num[self.player_num], Reporter: 1, Terrorist: 1}
+            # job_num_dic = {Mafia: mafia_num[self.player_num], Reporter: 1, Terrorist: 1}
+            # cnt = job_num_dic[Mafia] + 2
+            job_num_dic = {Mafia: mafia_num[self.player_num], Shaman: 1, Politician: 1}
             cnt = job_num_dic[Mafia] + 2
             random.shuffle(job_name_list)
             for job_class in job_name_list:
