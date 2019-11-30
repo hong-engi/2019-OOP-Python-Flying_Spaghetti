@@ -1,3 +1,8 @@
+# https://gamedev.stackexchange.com/questions/138888/user-input-text-in-pygame
+# https://self-learning-java-tutorial.blogspot.com/2015/12/pygame-setting-background-image.html
+# https://devnauts.tistory.com/61
+# 파이게임을 통해 마피아게임을 그래픽으로 구현하고자 했지만 실패한 코드
+# 죄송합니다ㅠㅠ (2304 박로진)
 import socket, threading
 import pygame, sys
 
