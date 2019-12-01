@@ -34,8 +34,7 @@ def receive():
             mysock.send(bytes('test_message'+data, 'UTF-8'))
             continue
 
-        if data[:6] != '@)!(확인':
-            print(data, end='')  # 서버로 부터 받은 값을 출력
+        print(data, end='')  # 서버로 부터 받은 값을 출력
 
     print('소켓의 읽기 버퍼를 닫습니다.')
     try:

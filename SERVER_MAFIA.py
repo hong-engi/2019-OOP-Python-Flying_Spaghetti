@@ -65,13 +65,12 @@ def error_block(inner_func):
     def dec_f(client, *args, **kwargs):
         nonlocal inner_func
         try:
-            return inner_func(client, *args, **kwargs)
-        except:
-            if client in name_dic:
-                print("{}의 연결에 실패했습니다.".format(name_dic[client]))
-            remove(client)
+            data = inner_func(client, *args, **kwargs)
+        except ConnectionError:
             raise CError
-
+        if not data:
+            raise CError
+        return data
     return dec_f
 
 
@@ -157,11 +156,10 @@ class Job:
                         vote_flag = True
                         sel_player = self.room.p_list[x]
                         sendm(self.player, " - {}(을)를 선택하셨습니다.".format(name_dic[sel_player]))
-                        if self.name == '정치인':
-                            sendm(self.player, "당신의 권력으로 두 표를 넣습니다.", line=False)
                         broadcast(self.room.p_list, " - {}에 한 표!".format(name_dic[sel_player]),
                                   talker=[self.player])
                         if self.name == '정치인':
+                            sendm(self.player, "당신의 권력으로 두 표를 넣습니다.", line=False)
                             self.room.vote_list[x] += 1
                         self.room.vote_list[x] += 1
                 else:
@@ -752,7 +750,7 @@ class Room:  # room 바로가기
             return False
         else:
             self.p_list.append(sock)
-            self.job[sock] = 'chatter'
+            self.job[sock] = Job(sock,room_list[self.name])
             sendm(sock, "{} 방에 접속했습니다! ({}/{})".format(self.name, len(self.p_list), self.player_num))
             broadcast(self.p_list,
                       "{}님이 접속하셨습니다! ({}/{})".format(name_dic[sock], len(self.p_list), self.player_num),
@@ -769,11 +767,11 @@ class Room:  # room 바로가기
                 msg = recvm(sock)
                 if self.start_flag:
                     return
-                if msg == '!나 나갈래!':
+                if msg == '!나 나갈래!' or msg is None:
                     self.kick(sock)
                     return
                 broadcast(self.p_list, name_dic[sock] + ' : ' + msg, talker=[sock], line=False)
-        except [CError, KeyError]:
+        except:
             self.kick(sock)
             return
 
@@ -782,6 +780,8 @@ class Room:  # room 바로가기
         sendm(sock, "방에서 나가졌습니다!")
         self.p_list.remove(sock)
         broadcast(self.p_list, "{}님이 나가셨습니다.".format(name_dic[sock]))
+        if len(self.p_list) == 0:
+            del room_list[self.name]
         waiting = threading.Thread(target=wait, args=(sock,))
         waiting.start()
         return
@@ -795,7 +795,7 @@ class Room:  # room 바로가기
         broadcast(self.p_list, "인원수가 채워졌으니, 게임을 시작하겠습니다! 더 이상 나가실 수 없습니다.\n")
         time.sleep(5)
         for player in self.p_list:
-            print(self.job[self.job_dic[player]].alive)
+            print(self.job[player].alive)
         cont = self.job_select()
         if not cont:
             self.new_game()
@@ -805,6 +805,7 @@ class Room:  # room 바로가기
         while self.game_ended() is False:
             self.daynnight()
             self.phase += 1
+        self.end_flag = True
         broadcast(self.dead_list, "@)!(확인")
         if self.game_ended() == 'C':
             broadcast(self.p_list, "마피아가 모두 죽었습니다.\n시민 팀이 승리했습니다!")
@@ -815,6 +816,7 @@ class Room:  # room 바로가기
         broadcast(self.p_list, "그럼 안녕히!")
         for player in reversed(self.p_list):
             self.kick(player)
+        del room_list[self.name]
         return
 
     @cerror_block
@@ -960,17 +962,14 @@ class Room:  # room 바로가기
     def job_select(self):
         try:
             job_name_list = [Shaman, Terrorist, Soldier, Sherlock, Reporter, Politician]
-            # job_num_dic = {Mafia: mafia_num[self.player_num], Reporter: 1, Terrorist: 1}
-            # cnt = job_num_dic[Mafia] + 2
-            job_num_dic = {Mafia: mafia_num[self.player_num], Shaman: 1}
-            cnt = job_num_dic[Mafia] + 1
+            job_num_dic = {Mafia: mafia_num[self.player_num], Police: 1, Doctor: 1}
+            cnt = job_num_dic[Mafia] + 2
             random.shuffle(job_name_list)
             for job_class in job_name_list:
                 if cnt >= self.player_num:
                     break
                 job_num_dic[job_class] = 1
                 cnt += 1
-            random.shuffle(self.p_list)
             job_index = 0
             for player in self.p_list:
                 x = random.choice(list(job_num_dic.keys()))
@@ -1044,8 +1043,7 @@ def wait(sock, name_f=None):
                         if room_name == '!뒤로!':
                             back_flag = True
                             break
-                        if room_name is not None:
-                            sendm(sock, "해당 이름을 가진 방이 없습니다.\n방 이름 : ", enter=False)
+                        sendm(sock, "해당 이름을 가진 방이 없습니다.\n방 이름 : ", enter=False)
                         room_name = recvm(sock)
                     if back_flag:
                         break
