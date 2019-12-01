@@ -12,97 +12,93 @@ server_sock.bind(address)
 server_sock.listen()
 print('마피아 서버 작동 시작')
 
-client_list = []
-name_dic = {'example': '홍은기'}
-room_list = {}
-min_player, max_player = 1, 12
-mafia_num = {1: 0, 2: 1, 3: 1, 4: 1, 5: 1, 6: 2, 7: 2, 8: 3, 9: 3, 10: 3, 11: 3, 12: 3}
+client_list = []#접속한 플레이어들을 저장하는 곳
+name_dic = {'example': '홍은기'}#플레이어들의 이름 저장
+room_list = {}#방들을 저장하는 곳
+room_player = {}#각 플레이어가 어느 방에 들어있는지 저장
+min_player, max_player = 4, 12 # 최소, 최대 플레이어 수
+mafia_num = {1: 0, 2: 1, 3: 1, 4: 1, 5: 1, 6: 2, 7: 2, 8: 3, 9: 3, 10: 3, 11: 3, 12: 3}#마피아 수
+removed_name = []#나간 사람의 이름을 저장하는 곳(에러 방지를 위함)
 
-
+#영어로 작성되었는지 검사하는 함수
 def isalpha(text):
     for char in text:
         if not 'a' <= char <= 'z' and not 'A' <= char <= 'Z':
             return False
     return True
 
-
+#CError - 서버 에러를 방지하기 위해 만든 클래스
 class CError(BaseException):
     pass
 
-
-def not_con(sock):
-    try:
-        sock.send(bytes('2H3DTESTAB!%FTTHFASDF', 'UTF-8'))
-        time.sleep(0.1)
-        return 0
-    except Exception as e:
-        print(e)
-        return 1
-
-
+#클라이언트를 삭제할 때 - 주로 연결이 잘못 끊겼을 때 쓰임
 def remove(sock):
     try:
         global name_dic, client_list
-        del name_dic[sock]
-        client_list.remove(sock)
-        sock.close()
+        if not name_dic[sock] in removed_name:
+            print('{}가 나갔습니다.'.format(name_dic[sock]))
+            removed_name.append(name_dic[sock])
+            if sock in room_player:
+                room_player[sock].kick(sock)
+            client_list.remove(sock)
+            sock.close()
     except:
         return
 
-
+#cerror_block - 거의 모든 함수에 데코레이터로 들어감 - 서버 오류가 났을 때 방지해주기 위함
 def cerror_block(inner_func):
     def dec_f(*args, **kwargs):
         nonlocal inner_func
         try:
             return inner_func(*args, **kwargs)
-        except CError:
+        except:
             return
 
     return dec_f
 
-
+#error_block - send와 recv함수를 데코레이트함 - 서버 오류가 났을 때 방지
+#CError를 raise해줌으로써 cerror_block이 효과를 발휘하게 함
 def error_block(inner_func):
     def dec_f(client, *args, **kwargs):
         nonlocal inner_func
         try:
             data = inner_func(client, *args, **kwargs)
-        except ConnectionError:
+        except:
+            remove(client)
             raise CError
         if not data:
+            remove(client)
             raise CError
         return data
 
     return dec_f
 
-
+#메세지를 보내는 함수를 간략하게 사용하기 위함 - enter는 엔터 문자, line은 줄, line_chr은 줄에 쓰이는 문자를 바꿔준다.
+#각 변수들의 default값은 다음과 같음, 즉 sendm(client,msg)를 실행하면 기본값으로 줄과 엔터 문자를 출력해준다.
 def sendm(client, msg, enter=True, line=True, line_chr='='):
-    try:
-        if line:
-            msg = line_chr * 100 + '\n' + msg
-        if enter:
-            msg = msg + '\n'
-        error_block(socket.socket.send)(client, msg.encode('utf-8'))
-    except CError:
-        return None
+    if line:
+        msg = line_chr * 100 + '\n' + msg
+    if enter:
+        msg = msg + '\n'
+    error_block(socket.socket.send)(client, msg.encode('utf-8'))
 
-
+#메세지를 받는 함수를 간략하게 사용하기 위함
 def recvm(client):
-    try:
-        x = error_block(socket.socket.recv)(client, 1024)
-        return x.decode('utf-8')
-    except CError:
-        return None
+    x = error_block(socket.socket.recv)(client, 1024)
+    return x.decode('utf-8')
 
-
+#Job클래스
 class Job:
     def __init__(self, player, room):
-        self.player = player
-        self.room = room
+        self.player = player # socket이 저장됨
+        self.room = room # room클래스를 저장함으로써 room 안에 있는 변수들을 사용할 수 있게 함
+        #alive,sel,name,shut_up : 각각 '살아 있음' '선택한 사람' '직업 이름' '성불 여부'를 판단함
         self.alive = True
         self.sel = None
         self.name = 'default'
         self.shut_up = False
 
+    @cerror_block #데코레이터 - CError를 판단하여 해당 에러가 나면 remove함
     def night(self):
         self.sel = None
         self.room.print_players(self.player)
@@ -379,7 +375,7 @@ class Reporter(Job):
             return None
         if self.report_skill:
             self.report_skill = False
-            self.room.news = player  #
+            self.room.news = player
             sendm(self.player, "{}님을 취재하기로 결정하셨습니다!\n"
                                "다음 날에 살아있다면 기사를 낼 수 있을 겁니다! 살아 있다면요...".format(name_dic[player]))
             return [True, player]
@@ -633,12 +629,14 @@ def name_select(sock):
         else:
             sendm(sock, "이름이 뭔가요?\n이름 : ", enter=False)
         name = recvm(sock).strip(' ')
+        if name in removed_name:
+            removed_name.remove(name)
+            break
     name = name[0:9]
     sendm(sock, "안녕하세요, {}님!".format(name))
     client_list.append(sock)
     name_dic[sock] = name
     print("{}(이)가 접속하였습니다.".format(name_dic[sock]))
-    print("현재 연결된 사용자: {}".format(name_dic))
 
 
 @cerror_block
@@ -665,11 +663,12 @@ def connection():
 
 
 def broadcast(cast_list, msg, talker=[], enter=True, line=True, line_chr='='):
-    for sockets in cast_list:
-        if sockets not in talker:
+    for sock in cast_list:
+        if sock not in talker:
             try:
-                sendm(sockets, msg, enter=enter, line=line, line_chr=line_chr)
+                sendm(sock, msg, enter=enter, line=line, line_chr=line_chr)
             except CError:
+                remove(sock)
                 continue
 
 
@@ -742,6 +741,7 @@ class Room:  # room 바로가기
         else:
             self.p_list.append(sock)
             self.job[sock] = Job(sock, room_list[self.name])
+            room_player[sock] = self
             sendm(sock, "{} 방에 접속했습니다! ({}/{})".format(self.name, len(self.p_list), self.player_num))
             broadcast(self.p_list,
                       "{}님이 접속하셨습니다! ({}/{})".format(name_dic[sock], len(self.p_list), self.player_num),
@@ -768,14 +768,22 @@ class Room:  # room 바로가기
 
     @cerror_block
     def kick(self, sock):
-        sendm(sock, "방에서 나가졌습니다!")
-        self.p_list.remove(sock)
-        broadcast(self.p_list, "{}님이 나가셨습니다.".format(name_dic[sock]))
-        if len(self.p_list) == 0:
-            del room_list[self.name]
-        waiting = threading.Thread(target=wait, args=(sock,))
-        waiting.start()
-        return
+        if sock in self.p_list:
+            try:
+                sendm(sock, "방에서 나가졌습니다!")
+            except:
+                pass
+            self.p_list.remove(sock)
+            broadcast(self.p_list, "{}님이 나가셨습니다.".format(name_dic[sock]))
+            if self.start_flag:
+                broadcast(self.p_list, "한 명이 나갔기 때문에, 더 이상 진행할 수 없습니다.".format(name_dic[sock]))
+                broadcast(self.p_list, "그럼 안녕히!")
+                for player in reversed(self.p_list):
+                    self.kick(player)
+            if len(self.p_list) == 0:
+                del room_list[self.name]
+            waiting = threading.Thread(target=wait, args=(sock,))
+            waiting.start()
 
     @cerror_block
     def game_start(self):
@@ -807,7 +815,6 @@ class Room:  # room 바로가기
         broadcast(self.p_list, "그럼 안녕히!")
         for player in reversed(self.p_list):
             self.kick(player)
-        del room_list[self.name]
         return
 
     @cerror_block
@@ -889,7 +896,7 @@ class Room:  # room 바로가기
                                    '선택하는 방법은 "!(선택 번호)"를 입력해주시면 됩니다.')
             self.happening('vote', 15)
             self.vote_result()
-            voted_player = self.vote_select()
+            voted_player = self.vote_select
             if voted_player is not None:
                 broadcast(self.p_list, "{}의 최후의 한 마디가 있겠습니다!".format(name_dic[self.vote_select]))
                 self.happening('final_words', 15)
@@ -993,7 +1000,6 @@ def wait(sock, name_f=None):
         msg = recvm(sock)
         if msg is None:
             return
-        print('msg' + msg)
         if msg == 'new room':
             room_name, room_maxp = None, None
             sendm(sock, "방의 이름을 입력해주세요. (영어만 가능)\n방 이름 : ", enter=False)
@@ -1032,7 +1038,8 @@ def wait(sock, name_f=None):
                         if room_name == '!뒤로!':
                             back_flag = True
                             break
-                        sendm(sock, "해당 이름을 가진 방이 없습니다.\n방 이름 : ", enter=False)
+                        if room_name is not None:
+                            sendm(sock, "해당 이름을 가진 방이 없습니다.\n방 이름 : ", enter=False)
                         room_name = recvm(sock)
                     if back_flag:
                         break
