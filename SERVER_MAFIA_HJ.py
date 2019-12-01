@@ -18,7 +18,6 @@ room_list = {}
 min_player, max_player = 1, 12
 mafia_num = {1: 0, 2: 1, 3: 1, 4: 1, 5: 1, 6: 2, 7: 2, 8: 3, 9: 3, 10: 3, 11: 3, 12: 3}
 
-
 def isalpha(text):
     for char in text:
         if not 'a' <= char <= 'z' and not 'A' <= char <= 'Z':
@@ -157,12 +156,11 @@ class Job:
                         vote_flag = True
                         sel_player = self.room.p_list[x]
                         sendm(self.player, "{}(을)를 선택하셨습니다.".format(name_dic[sel_player]))
-                        if self.name == '정치인':
-                            sendm(self.player, "당신의 권력으로 두 표를 넣습니다.", line=False)
                         broadcast(self.room.p_list, "{}에 한 표!".format(name_dic[sel_player]),
                                   talker=[self.player])
                         if self.name == '정치인':
                             self.room.vote_list[x] += 1
+                            sendm(self.player, "당신의 권력으로 두 표를 넣습니다.", line=False)
                         self.room.vote_list[x] += 1
                 else:
                     sendm(self.player, "이미 투표하셨습니다.")
@@ -267,6 +265,7 @@ class Mafia(Job):
         super().__init__(player, room)
         self.name = '마피아'
         self.tutorial()
+        self.room.mafia_list.append(player)
 
     @cerror_block
     def tutorial(self):
@@ -320,7 +319,7 @@ class Police(Job):
                 self.use_skill = True
                 self.check_list.append(player)
                 if self.room.job[player].name == '마피아':
-                    sendm(self.player, "경크! {}(은)는 마피아입니다!!!".format(name_dic[player]))
+                    sendm(self.player, "{}(은)는 마피아입니다!!!".format(name_dic[player]))
                 else:
                     sendm(self.player, "{}(은)는 마피아가 아니었습니다...".format(name_dic[player]))
                 return [True, player]
@@ -594,6 +593,7 @@ class Shaman(Job):
         self.name = '영매'
         self.use_skill = False
         self.tutorial()
+        self.room.shaman = player
 
     @cerror_block
     def tutorial(self):
@@ -683,7 +683,7 @@ def broadcast(cast_list, msg, talker=[], enter=True, line=True, line_chr='='):
 class Room:  # room 바로가기
     def __init__(self, name, num):
         self.p_list = []
-        self.job, self.mafia_list, self.citizen_list, self.dead_list = {}, [], [], []
+        self.job, self.mafia_list, self.dead_list = {}, [], []
         self.name = name
         self.player_num = num
         self.start_flag, self.end_flag = False, False
@@ -895,8 +895,13 @@ class Room:  # room 바로가기
                 self.happening('final_vote', 20)
             if self.final_vote_result():
                 self.kill(voted_player, 'by vote')
-            self.upvote, self.downvote, self.vote_list = 0, 0, [0] * self.player_num
-            self.vote_select = None
+            self.vote_init()
+
+    def vote_init(self):
+        self.upvote = 0
+        self.downvote = 0
+        self.vote_list = [0]*self.plaer_num
+        self.vote_select = None
 
     @cerror_block
     def happening(self, func_name, timer_time):
@@ -916,12 +921,11 @@ class Room:  # room 바로가기
     @cerror_block
     def game_ended(self):
         mafia_n, citizen_n = 0, 0
-        for mafia in self.mafia_list:
-            if self.job[mafia].alive:
+        for player in self.p_list:
+            if player in self.mafia_list:
                 mafia_n += 1
-        for citizen in self.citizen_list:
-            if self.job[citizen].alive:
-                if self.job[citizen].name == '정치인':
+            else:
+                if self.job[player].name == '정치인':
                     citizen_n += 1
                 citizen_n += 1
         if mafia_n == 0:
@@ -964,12 +968,6 @@ class Room:  # room 바로가기
                 while job_num_dic[x] == 0:
                     x = random.choice(list(job_num_dic.keys()))
                 self.job[player] = x(player, room_list[self.name])
-                if self.job[player].name == '마피아':
-                    self.mafia_list.append(player)
-                else:
-                    self.citizen_list.append(player)
-                if self.job[player].name == '영매':
-                    self.shaman = player
                 job_num_dic[x] -= 1
                 job_index += 1
             for player in self.job:

@@ -793,6 +793,8 @@ class Room:  # room 바로가기
         broadcast(self.p_list, "@)!(확인", enter=False, line=False)
         broadcast(self.p_list, "인원수가 채워졌으니, 게임을 시작하겠습니다! 더 이상 나가실 수 없습니다.\n")
         time.sleep(5)
+        for player in self.p_list:
+            print(self.job[self.job_dic[player]].alive)
         cont = self.job_select()
         if not cont:
             self.new_game()
