@@ -101,28 +101,30 @@ class Job:
     @cerror_block #데코레이터 - CError를 판단하여 해당 에러가 나면 remove함
     def night(self):
         self.sel = None
-        self.room.print_players(self.player)
-        while not self.room.timeout:
-            msg = recvm(self.player)
+        self.room.print_players(self.player)#플레이어들의 이름과 번호 출력
+        while not self.room.timeout:#타이머 - 타이머가 끝날 때까지 진행됨
+            msg = recvm(self.player)#메시지를 받아, 이에 따른 게임을 진행함
             if self.room.timeout:
                 break
-            if msg == '!help':
+            if msg == '!help':#도움말을 출력
                 self.print_help()
                 continue
-            if msg[0] == '!':
+            if msg[0] == '!':#첫 글자가 느낌표면, 선택함
                 if self.name == '영매':
-                    x = self.dead_select(msg)
+                    x = self.dead_select(msg)#죽은 사람 중에 선택
                 else:
-                    x = self.alive_select(msg)
+                    x = self.alive_select(msg)#산 사람 중에 선택
                 if x is not False:
-                    self.sel = self.select(self.room.p_list[x])
+                    self.sel = self.select(self.room.p_list[x])#선택을 저장
                 continue
             else:
-                self.night_talk(msg)
+                self.night_talk(msg)#밤에 말할 수 있는(예 : 마피아)는 night_talk 함수가 있어 서로 채팅이 가능함, 아니면 pass
 
+    #night_talk를 상속 클래스들에서 따로 지정해줘야 사용 가능함
     def night_talk(self, msg):
         pass
 
+    #낮 - 제한시간 전까지 서로 대화 가능함(살아있는 사람들끼리)
     @cerror_block
     def morning(self):
         while not self.room.timeout:
@@ -130,10 +132,11 @@ class Job:
             if self.room.timeout:
                 return
             if msg == '!help':
-                self.print_help()
+                self.print_help()#도움말 출력
             else:
-                self.room.talk(self.player, msg)
+                self.room.talk(self.player, msg)#사람들끼리 대화하는 함수
 
+    #투표 - 사람들마다 한 표씩 투표 가능
     @cerror_block
     def vote(self):
         vote_flag = False
@@ -142,50 +145,52 @@ class Job:
             msg = recvm(self.player)
             if self.room.timeout:
                 break
-            if msg[0:1] == '!':
-                if not vote_flag:
+            if msg == '!help':
+                self.print_help('morning')
+            elif msg[0] == '!':#느낌표 - 사람 선택
+                if not vote_flag:#이미 투표했다면, 걸러짐
                     x = self.alive_select(msg)
                     if x is False:
                         continue
-                    else:
+                    else:#사람 선택
                         vote_flag = True
                         sel_player = self.room.p_list[x]
                         sendm(self.player, " - {}(을)를 선택하셨습니다.".format(name_dic[sel_player]))
                         broadcast(self.room.p_list, " - {}에 한 표!".format(name_dic[sel_player]),
                                   talker=[self.player])
-                        if self.name == '정치인':
+                        if self.name == '정치인':#정치인은 두 표
                             sendm(self.player, "당신의 권력으로 두 표를 넣습니다.", line=False)
+                            self.room.vote_list[x] += 2
+                        else:#아니면 한 표
                             self.room.vote_list[x] += 1
-                        self.room.vote_list[x] += 1
                 else:
                     sendm(self.player, "이미 투표하셨습니다.")
-            elif msg == '!help':
-                self.print_help('morning')
-            else:
+            else:#투표가 아니라면 채팅
                 self.room.talk(self.player, msg)
 
     @cerror_block
-    def print_help(self, mode='default'):
+    def print_help(self, mode='default'):#도움말 출력
         sendm(self.player, "사람을 선택할 때에는, 입력창에 '!(사람번호)' 를 입력하시면 됩니다.\n"
                            "예를 들어, {0}번 사람을 선택하고 싶으면 '!{0}'를 입력하시면 됩니다.".format(random.randint(1, 8)))
 
     @cerror_block
-    def death(self):
+    def death(self):#죽음 - 죽은 사람들끼리 대화 가능, 게임이 끝날 때까지 상태 지속
         sendm(self.player, '축하해오! 당신은 뒤졌어오!')
         while not self.room.end_flag:
             msg = recvm(self.player)
             if self.room.end_flag:
                 return
             send_msg = '[DEAD]{} : '.format(name_dic[self.player]) + msg
-            if not self.shut_up:
+            if not self.shut_up:#성불될 시 채팅 X
                 broadcast(self.room.dead_list, send_msg, talker=[self.player])
+                #영매 존재 시 영매에게도 채팅 됨
                 if self.room.shaman is not None and self.room.job[self.room.shaman].alive:
                     sendm(self.room.shaman, send_msg)
             else:
                 sendm(self.player, "성불되어서 채팅을 사용할 수 없습니다. 닥치세요.")
 
     @cerror_block
-    def alive_select(self, msg):
+    def alive_select(self, msg):#살아있는 사람 중에서 선택
         msg = msg[1:].strip(' ')
         if msg.isdigit() and 1 <= int(msg) <= self.room.player_num:
             if self.room.job[self.room.p_list[int(msg) - 1]].alive:
@@ -198,7 +203,7 @@ class Job:
             return False
 
     @cerror_block
-    def dead_select(self, msg):
+    def dead_select(self, msg):#죽어있는 사람 중에서 선택
         msg = msg[1:].strip(' ')
         if msg.isdigit() and 1 <= int(msg) <= self.room.player_num:
             if not self.room.job[self.room.p_list[int(msg) - 1]].alive:
@@ -211,7 +216,7 @@ class Job:
             return False
 
     @cerror_block
-    def final_words(self):
+    def final_words(self):#최후의 변론 - 투표에 걸린 사람이 마지막으로 말함
         if self.player == self.room.vote_select:
             while not self.room.timeout:
                 msg = recvm(self.player)
@@ -224,7 +229,7 @@ class Job:
                 return
 
     @cerror_block
-    def final_vote(self):
+    def final_vote(self):#투표에 걸린 사람을 찬반으로 죽일지 말지를 결정하는 투표
         final_vote_flag = False
         while not self.room.timeout:
             msg = recvm(self.player)
@@ -251,16 +256,16 @@ class Job:
                 self.room.talk(self.player, msg)
 
     @cerror_block
-    def select(self, player):
+    def select(self, player):#기본적으로는 밤에 선택을 하지 않음, 상속 클래스에서 세부적으로 선택
         sendm(self.player, "밤에 사람을 선택하는 직업이 아닙니다.")
         return None
 
-
+#상속되는 클래스는 기본 형식은 Job 클래스와 같아 주석을 자세히 달지 않음
 class Mafia(Job):
     def __init__(self, player, room):
-        super().__init__(player, room)
-        self.name = '마피아'
-        self.tutorial()
+        super().__init__(player, room)#상속받은 클래스의 init함수를 실행
+        self.name = '마피아'#직업의 이름을 설정
+        self.tutorial()#간단한 직업소개
 
     @cerror_block
     def tutorial(self):
@@ -270,18 +275,18 @@ class Mafia(Job):
                            "마피아 수가 시민들보다 많을 시 승리합니다!")
 
     @cerror_block
-    def night_talk(self, msg):
+    def night_talk(self, msg):#마피아는 밤에 채팅이 가능함
         broadcast(self.room.mafia_list, '[MAFIA]{} : {}'.format(name_dic[self.player], msg), talker=[self.player])
         broadcast(self.room.dead_list, '[MAFIA]{} : {}'.format(name_dic[self.player], msg), talker=[self.player])
 
-    @cerror_block
+    @cerror_block#직업에 따라 help 설명이 다름
     def print_help(self, mode='default'):
         super().print_help()
         sendm(self.player, "죽일 사람을 선택하세요!\n"
                            "마피아가 여러 명이어도 죽일 사람은 마지막에 선택된 한 사람만 죽일 수 있습니다.")
 
     @cerror_block
-    def select(self, player):
+    def select(self, player):#마피아는 무제한으로 선택 가능, 또한 밤에 직업마다 선택에 따른 기능이 다르기 때문에 select함수는 직업마다 다름
         sendm(self.player, "{}(을)를 죽이기로 결정하셨습니다.".format(name_dic[player]))
         self.room.mafia_select = player
         broadcast(self.room.mafia_list, "[MAFIA_SELECT] {}님이 {}님을 선택하셨어요!"
@@ -335,7 +340,7 @@ class Police(Job):
                 self.check_print()
 
     @cerror_block
-    def check_print(self):
+    def check_print(self):#경찰은 지금까지의 조사 결과를 볼 수 있음
         sendm(self.player, "-" * 100 + '\n' + "번호    이름")
         for player_num in range(len(self.room.p_list)):
             player = self.room.p_list[player_num]
@@ -359,7 +364,7 @@ class Reporter(Job):
     def __init__(self, player, room):
         super().__init__(player, room)
         self.name = '기자'
-        self.report_skill = True
+        self.report_skill = True#능력이 일회용이므로 따로 변수를 설정함
         self.tutorial()
 
     @cerror_block
@@ -374,7 +379,7 @@ class Reporter(Job):
             sendm(self.player, "첫 번째 밤에는 취재가 불가능합니다! ㅜㅜ")
             return None
         if self.report_skill:
-            self.report_skill = False
+            self.report_skill = False#능력 사용 시 다시는 사용하지 못함
             self.room.news = player
             sendm(self.player, "{}님을 취재하기로 결정하셨습니다!\n"
                                "다음 날에 살아있다면 기사를 낼 수 있을 겁니다! 살아 있다면요...".format(name_dic[player]))
@@ -404,8 +409,8 @@ class Sherlock(Job):
                            "마피아가 모두 죽으면 승리합니다!")
 
     def night(self):
-        self.use_skill = False
-        super().night()
+        self.use_skill = False#일회용 능력이 아니므로 밤마다 재충전됨
+        super().night()#상속받은 클래스의 night함수를 실행
 
     @cerror_block
     def select(self, player):
@@ -620,7 +625,7 @@ class Shaman(Job):
 
 
 @cerror_block
-def name_select(sock):
+def name_select(sock):#이름 선택
     global name_dic
     name = '홍은기'
     while name in list(name_dic.values()):
@@ -640,7 +645,7 @@ def name_select(sock):
 
 
 @cerror_block
-def room_list_print(sock):
+def room_list_print(sock):#밤 이름 출력
     global room_list
     sendm(sock, "         [Room Lists]         \n" + "-" * 30)
     sendm(sock, "제목           사람 수", line=False)
@@ -651,7 +656,7 @@ def room_list_print(sock):
 
 
 @cerror_block
-def connection():
+def connection():#클라이언트를 받는 함수
     global client_list
 
     while True:
@@ -662,7 +667,9 @@ def connection():
         waiting.start()
 
 
-def broadcast(cast_list, msg, talker=[], enter=True, line=True, line_chr='='):
+def broadcast(cast_list, msg, talker=[], enter=True, line=True, line_chr='='):#광역으로 메세지 보내줌
+    #cast_list - 메세지를 받는 사람들
+    #talker - 메세지를 받지 않는 사람들
     for sock in cast_list:
         if sock not in talker:
             try:
@@ -672,7 +679,7 @@ def broadcast(cast_list, msg, talker=[], enter=True, line=True, line_chr='='):
                 continue
 
 
-class Room:  # room 바로가기
+class Room:  # 방을 선언한 클래스
     def __init__(self, name, num):
         self.p_list = []
         self.job, self.mafia_list, self.dead_list = {}, [], []
