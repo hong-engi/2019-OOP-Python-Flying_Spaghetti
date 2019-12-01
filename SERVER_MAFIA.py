@@ -711,7 +711,7 @@ class Room:  # 방을 선언한 클래스
         return
 
     @cerror_block
-    def vote_result(self):#
+    def vote_result(self):#투표의 결과를 냄
         duo_flag, max_vote, voted_player = False, 0, 0
         for i in range(len(self.vote_list)):
             if self.vote_list[i] > max_vote:
@@ -727,7 +727,7 @@ class Room:  # 방을 선언한 클래스
         self.vote_select = self.p_list[voted_player]
 
     @cerror_block
-    def final_vote_result(self):
+    def final_vote_result(self):#찬반 투표의 결과를 냄
         if self.vote_select is not None:
             res = self.upvote >= self.downvote
             print("찬성 {0}, 반대 {1}".format(self.upvote, self.downvote))
@@ -737,7 +737,7 @@ class Room:  # 방을 선언한 클래스
             return False
 
     @cerror_block
-    def people_add(self, sock):
+    def people_add(self, sock):#해당 방 클래스에 사람을 접속시킴
         global name_dic
         if len(self.p_list) == self.player_num:
             sendm(sock, "인원이 꽉 찼습니다!")
@@ -757,7 +757,7 @@ class Room:  # 방을 선언한 클래스
             people_chat.start()
             return True
 
-    def chat(self, sock):
+    def chat(self, sock):#방에 처음 들어왔을 때, 채팅에 들어가게 함.
         global name_dic
         try:
             sendm(sock, "채팅에 들어오셨습니당. 방을 나가시려면 '!나 나갈래!'라고 입력해주시면 됩니다.")
@@ -774,7 +774,7 @@ class Room:  # 방을 선언한 클래스
             return
 
     @cerror_block
-    def kick(self, sock):
+    def kick(self, sock):#사람을 방에서 나가게 함
         if sock in self.p_list:
             try:
                 sendm(sock, "방에서 나가졌습니다!")
@@ -793,8 +793,8 @@ class Room:  # 방을 선언한 클래스
             waiting.start()
 
     @cerror_block
-    def game_start(self):
-        while len(self.p_list) < self.player_num:
+    def game_start(self):#게임을 시작함
+        while len(self.p_list) < self.player_num:#인원수가 채워질 때까지 기다림
             time.sleep(1)
         self.start_flag = 1
         broadcast(self.p_list, "@)!(확인", enter=False, line=False)
@@ -807,11 +807,13 @@ class Room:  # 방을 선언한 클래스
             self.new_game()
             return
         # 게임 시작
-        self.phase = 1
+        self.phase = 1#낮밤 결정
         while self.game_ended() is False:
-            self.daynnight()
+            self.daynnight()#진행하는 함수
             self.phase += 1
+        #결과 출력
         self.end_flag = True
+        #결과 출력
         broadcast(self.dead_list, "@)!(확인", enter=False, line=False)
         if self.game_ended() == 'C':
             broadcast(self.p_list, "마피아가 모두 죽었습니다.\n시민 팀이 승리했습니다!")
@@ -820,12 +822,13 @@ class Room:  # 방을 선언한 클래스
                                    "마피아 팀이 승리했습니다!")
         self.job_print()
         broadcast(self.p_list, "그럼 안녕히!")
+        #게임이 끝난 후, 모두 나가게 함
         for player in reversed(self.p_list):
             self.kick(player)
         return
 
     @cerror_block
-    def kill(self, player, killed):
+    def kill(self, player, killed):#플레이어를 죽게 하는 함수로, 사망 회피나 예외 상황 등을 모두 여기에 넣음
         if self.heal == player:
             broadcast(self.p_list, "{}(이)가 마피아의 공격을 받았지만, 의사의 치료를 받고 살았습니다!".format(name_dic[player]))
             return
@@ -862,7 +865,7 @@ class Room:  # 방을 선언한 클래스
         dead_chat.start()
 
     @cerror_block
-    def job_print(self):
+    def job_print(self):#직업을 출력해준다.
         text = "-" * 30 + '\n' + "이름             직업" + '\n'
         for player in self.p_list:
             name = name_dic[player]
@@ -871,7 +874,7 @@ class Room:  # 방을 선언한 클래스
         broadcast(self.p_list, text, line=False)
 
     @cerror_block
-    def news_print(self):
+    def news_print(self):#기자의 기사를 출력해준다.
         if self.news is not None:
             broadcast(self.p_list,
                       "!!!!속보에요 속보!!!!\n{}(이)가 {}래요!\n".format(name_dic[self.news],
@@ -880,49 +883,50 @@ class Room:  # 방을 선언한 클래스
             self.news = None
 
     @cerror_block
-    def daynnight(self):
+    def daynnight(self):#낮과 밤을 모두 처리하는 함수
         day_num = self.phase // 2
-        if self.phase == 1:
+        if self.phase == 1:#맨 처음 밤, 튜토리얼을 출력해줌
             for player in self.p_list:
                 self.job[player].print_help('night')
                 sendm(player, '다음에도 도움이 필요하다면 "!help"를 입력해주세요.')
-        if self.phase % 2 == 1:
+        if self.phase % 2 == 1:#밤을 진행
             broadcast(self.p_list, "{}번째 밤".format(day_num))
-            self.happening('night', 25)
+            self.happening('night', 25)#밤
             if self.mafia_select is not None:
                 self.kill(self.mafia_select, 'by mafia')
             else:
                 broadcast(self.p_list, "오늘 밤은 조용하네요...")
             self.mafia_select, self.heal = None, None
-        else:
+        else:#낮을 진행
             broadcast(self.p_list, "{}번째 낮".format(day_num))
             self.news_print()
             morning_time = 8 * (self.player_num - len(self.dead_list))
-            self.happening('morning', 30 if 30 <= morning_time else morning_time)
+            self.happening('morning', 30 if 30 <= morning_time else morning_time)#낮
             broadcast(self.p_list, '투표 시간입니다! 투표할 사람을 선택해주세요. \n'
                                    '선택하는 방법은 "!(선택 번호)"를 입력해주시면 됩니다.')
-            self.happening('vote', 15)
+            self.happening('vote', 15)#투표
             self.vote_result()
             voted_player = self.vote_select
             if voted_player is not None:
                 broadcast(self.p_list, "{}의 최후의 한 마디가 있겠습니다!".format(name_dic[self.vote_select]))
-                self.happening('final_words', 15)
+                self.happening('final_words', 15)#최후의 변론
                 broadcast(self.p_list, "찬반 투표 시간입니다!\n"
                                        "{}(을)를 죽이는 데 찬성하시면 '찬성' 또는 'y',\n"
                                        "반대하시면 '반대' 또는 'n'을 입력하세요.\n"
                                        "입력하지 않으면 반대표로 투표됩니다.".format(name_dic[self.vote_select])
                           )
-                self.happening('final_vote', 10)
+                self.happening('final_vote', 10)#찬반 투표
             if self.final_vote_result():
                 self.kill(voted_player, 'by vote')
             self.vote_init()
 
-    def vote_init(self):
+    def vote_init(self):#투표 후 투표 변수 초기화
         self.upvote, self.downvote, self.vote_list = 0, 0, [0] * self.player_num
         self.vote_select = None
 
     @cerror_block
-    def happening(self, func_name, timer_time):
+    def happening(self, func_name, timer_time):#Job 클래스 안에 있는 'func_name'이라는 이름을 가진 함수를 모든 플레이어들에 대해
+        #일괄적으로 실행함, timer_time만큼 타이머를 잼
         thread_list = []
         self.timeout = False
         timewatch = threading.Thread(target=self.timer, args=(timer_time,))
@@ -936,7 +940,7 @@ class Room:  # 방을 선언한 클래스
         for thread in thread_list:
             thread.join()
 
-    def game_ended(self):
+    def game_ended(self):#게임이 끝났는지 판별하는 함수
         mafia_n, citizen_n = 0, 0
         for player in self.p_list:
             if player not in self.dead_list:
@@ -948,13 +952,13 @@ class Room:  # 방을 선언한 클래스
                     else:
                         citizen_n += 1
         if mafia_n == 0:
-            return 'C'
+            return 'C'#시민 승
         if mafia_n >= citizen_n:
-            return 'M'
+            return 'M'#마피아 승
         return False
 
     @cerror_block
-    def print_players(self, sock):
+    def print_players(self, sock):#플레이어들의 정보를 출력
         sendm(sock, "*" * 100 + '\n' + "번호     이름")
         for player_num in range(len(self.p_list)):
             msg = "<{}>  -  [{}]".format(player_num + 1, name_dic[self.p_list[player_num]])
@@ -964,7 +968,7 @@ class Room:  # 방을 선언한 클래스
         sendm(sock, "*" * 100, line=False)
 
     @cerror_block
-    def job_select(self):
+    def job_select(self):#게임 시작 때 직업을 무작위로 지정하는 함수
         try:
             job_name_list = [Shaman, Terrorist, Soldier, Sherlock, Reporter, Politician]
             job_num_dic = {Mafia: mafia_num[self.player_num], Police: 1, Doctor: 1}
@@ -998,7 +1002,7 @@ class Room:  # 방을 선언한 클래스
 
 
 @cerror_block
-def wait(sock, name_f=None):
+def wait(sock, name_f=None):#맨 처음 접속했을 때 기다리는 함수
     global name_dic, min_player, max_player, room_list
     if name_f is not None:
         name_f.join()
@@ -1007,7 +1011,7 @@ def wait(sock, name_f=None):
         msg = recvm(sock)
         if msg is None:
             return
-        if msg == 'new room':
+        if msg == 'new room':#새 방 만들기
             room_name, room_maxp = None, None
             sendm(sock, "방의 이름을 입력해주세요. (영어만 가능)\n방 이름 : ", enter=False)
             while room_name is None or not isalpha(room_name) or room_name in room_list:
@@ -1030,7 +1034,7 @@ def wait(sock, name_f=None):
             room_list[room_name].people_add(sock)
             return
 
-        if msg == 'enter room':
+        if msg == 'enter room':#방 들어가기
             if len(room_list) == 0:
                 sendm(sock, "만들어져 있는 방이 없네요. 새로운 방을 만들어주세요!")
                 continue
@@ -1059,7 +1063,7 @@ def wait(sock, name_f=None):
                 return
 
 
-Base_Server = threading.Thread(target=connection, args=())
+Base_Server = threading.Thread(target=connection, args=())#클라이언트의 연결을 기다리는 스레드 실행
 Base_Server.start()
 
 Base_Server.join()
