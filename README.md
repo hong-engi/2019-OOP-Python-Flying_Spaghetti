@@ -90,6 +90,10 @@ pygame : 그래픽 구현
 getattr 함수를 이용하여 서로 다른 클래스에 있는 같은 이름의 함수들을 사용 가능.
 decoration을 이용하여 에러 제거.(error_block 함수)
 
+## 10. 실행방법
+SERVER_MAFIA.py를 실행한 뒤, CLIENT.py를 실행하여 SERVER_MAFIA에 접속. 이때 CLIENT.py의 코드를 복사하여 클라이언트 여러
+개를 만들어 그것들 역시 SERVER_MAFIA에 접속. 이후 안내에 따라 게임을 플레이하면 됨. 이때 게임을 플레이할 때 memo.py역시 실행시켜
+얻은 데이터들을 메모 하면서 플레이할 수 있음.
 <hr>
 
 #### readme 작성관련 참고하기 [바로가기](https://heropy.blog/2017/09/30/markdown/)
