@@ -233,8 +233,6 @@ def main(pg = pygame):
                     if event.key == pg.K_BACKSPACE:
                         textBox.text = textBox.text[:-1]
                         textBox.update()
-                        print("good")
-                        print(textBox.text)
                     if event.key == pygame.K_SPACE:
                         textBox.text += " "
                         textBox.update()
