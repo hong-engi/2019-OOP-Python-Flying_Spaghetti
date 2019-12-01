@@ -696,22 +696,22 @@ class Room:  # 방을 선언한 클래스
         self.phase = 0
         self.new_game()
 
-    def new_game(self):
+    def new_game(self):#새로운 게임을 실행하는 함수
         game = threading.Thread(target=self.game_start)
         game.start()
 
-    def talk(self, talker, msg):
+    def talk(self, talker, msg):#채팅할 때 사용하는 함수
         broadcast(self.p_list, "{} : {}".format(name_dic[talker], msg), talker=[talker], line=False)
 
     @cerror_block
-    def timer(self, sec):
+    def timer(self, sec):#시간을 재는 함수
         time.sleep(sec)
         self.timeout = True
         broadcast(self.p_list, "fEEBgFFDASDL%%@FM", line=False, enter=False, talker=self.dead_list)
         return
 
     @cerror_block
-    def vote_result(self):
+    def vote_result(self):#
         duo_flag, max_vote, voted_player = False, 0, 0
         for i in range(len(self.vote_list)):
             if self.vote_list[i] > max_vote:
