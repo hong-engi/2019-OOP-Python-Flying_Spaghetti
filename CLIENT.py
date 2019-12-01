@@ -65,6 +65,7 @@ def main_thread():
         except ConnectionError:
             break
 
+
     print("소켓의 쓰기 버퍼를 닫습니다.")
     mysock.shutdown(socket.SHUT_WR)
     thread_recv.join()
