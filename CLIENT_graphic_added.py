@@ -3,8 +3,9 @@
 # https://devnauts.tistory.com/61
 # 파이게임을 통해 마피아게임을 그래픽으로 구현하고자 했지만 실패한 코드
 # 죄송합니다ㅠㅠ (2304 박로진)
+
 import socket, threading
-import pygame, sys
+import pygame, sys, time
 
 server_ip = '127.0.0.1'
 server_port = 50000
@@ -102,6 +103,7 @@ def starting_screen():
                 sys.exit()
 
             elif event.key == pygame.K_RETURN:
+                time.sleep(1)
                 whitebackground = pygame.image.load("whitebackground.jpeg").convert()
                 background_change(whitebackground)
                 dead = False
@@ -204,7 +206,6 @@ def main_thread():
 
     textBox = TextBox()
     textBox.rect.center = (512, 432)
-    running = True
 
     # 메시지 받는 스레스 시작
     thread_recv = threading.Thread(target=receive, args=())
@@ -213,41 +214,40 @@ def main_thread():
     while True:
         try:
 
-            while running:
+            screen.blit(textBox.image, textBox.rect)
+            pygame.display.flip()
 
-                screen.blit(textBox.image, textBox.rect)
-                pygame.display.flip()
-
-                for e in pygame.event.get():
-                    print('bye')
-                    if e.type == pygame.QUIT:
-                        print(0)
-                        pygame.quit()
-                        sys.exit()
-                    if e.type == pygame.KEYUP:
-                        print(1)
-                        if e.key in [pygame.K_RSHIFT, pygame.K_LSHIFT]:
-                            shiftDown = False
-                    if e.type == pygame.KEYDOWN:
-                        print(2)
-                        textBox.add_chr(pygame.key.name(e.key))
-                        if e.key == pygame.K_SPACE:
-                            print(3)
-                            textBox.text += " "
-                            textBox.update()
-                        if e.key in [pygame.K_RSHIFT, pygame.K_LSHIFT]:
-                            print(4)
-                            shiftDown = True
-                        if e.key == pygame.K_BACKSPACE:
-                            print(5)
-                            textBox.text = textBox.text[:-1]
-                            textBox.update()
-                        if e.key == pygame.K_RETURN:
-                            print(6)
-                            if len(textBox.text) > 0:
-                                print(1)
-                                data = textBox.text
-                                running = False
+            for e in pygame.event.get():
+                print('bye')
+                if e.type == pygame.QUIT:
+                    print(0)
+                    pygame.quit()
+                    sys.exit()
+                # if e.type == pygame.KEYUP:
+                #     print("rojin")
+                #     if e.key in [pygame.K_RSHIFT, pygame.K_LSHIFT]:
+                #         shiftDown = False
+                if e.type == pygame.KEYDOWN:
+                    print(2)
+                    textBox.add_chr(pygame.key.name(e.key))
+                    if e.key == pygame.K_SPACE:
+                        print(3)
+                        textBox.text += " "
+                        textBox.update()
+                    if e.key in [pygame.K_RSHIFT, pygame.K_LSHIFT]:
+                        print(4)
+                        shiftDown = True
+                    if e.key == pygame.K_BACKSPACE:
+                        print(5)
+                        textBox.text = textBox.text[:-1]
+                        textBox.update()
+                    if e.key == pygame.K_RETURN:
+                        print(6)
+                        if len(textBox.text) > 0:
+                            print(7)
+                            data = textBox.text
+                            textBox.text = ""
+                            break
 
         except KeyboardInterrupt:
             print('keyboardinterrupted')
