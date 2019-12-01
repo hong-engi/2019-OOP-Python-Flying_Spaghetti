@@ -1,3 +1,6 @@
+# https://gamedev.stackexchange.com/questions/138888/user-input-text-in-pygame
+# https://self-learning-java-tutorial.blogspot.com/2015/12/pygame-setting-background-image.html
+# https://devnauts.tistory.com/61
 import pygame
 
 pygame.init()
